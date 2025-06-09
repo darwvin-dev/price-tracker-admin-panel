@@ -21,19 +21,17 @@ import {
 } from "@mui/x-data-grid";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { forwardRef, useEffect, useImperativeHandle, useState } from "react";
-import type { Price } from "../../pages/ProductView";
 import axios from "axios";
+import type { Price } from "../../types/Price";
 
 type Props = {
   productId: string;
   stores: string[];
-  setSnackbar: React.Dispatch<
-    React.SetStateAction<{
-      open: boolean;
-      message: string;
-      severity: "success" | "error" | "info" | "warning";
-    }>
-  >;
+  setSnackbar: React.Dispatch<{
+    open: boolean;
+    message: string;
+    severity: "success" | "error" | "info" | "warning";
+  }>;
 };
 
 export type PriceHistoryTableRef = {
@@ -44,7 +42,7 @@ const PriceHistoryTable = forwardRef<PriceHistoryTableRef, Props>(
   ({ productId, stores, setSnackbar }, ref) => {
     const [prices, setPrices] = useState<Price[]>([]);
     const [page, setPage] = useState(1);
-    const [count, setCount] = useState(0); 
+    const [count, setCount] = useState(0);
     const [selectedStore, setSelectedStore] = useState("all");
     const [loading, setLoading] = useState(true);
     const [deletingId, setDeletingId] = useState<number | null>(null);
@@ -120,14 +118,22 @@ const PriceHistoryTable = forwardRef<PriceHistoryTableRef, Props>(
     const columns: GridColDef[] = [
       { field: "store", headerName: "فروشگاه", width: 140 },
       {
+        field: "variation",
+        headerName: "رنگ",
+        width: 140,
+        renderCell: (params) => <span>{params.value}</span>,
+      },
+      {
         field: "price",
         headerName: "قیمت",
-        width: 140,
+        width: 200,
         renderCell: (params) => (
-          <span>{params.value.toLocaleString()} ریال</span>
+          <Typography fontWeight={500} color="primary">
+            {params.value.toLocaleString()} ریال
+          </Typography>
         ),
       },
-      { field: "checked_at", headerName: "تاریخ ثبت", width: 200 },
+      { field: "checked_at", headerName: "تاریخ ثبت", width: 120 },
       { field: "crawler_name", headerName: "کرالر", width: 120 },
       {
         field: "actions",
@@ -152,12 +158,21 @@ const PriceHistoryTable = forwardRef<PriceHistoryTableRef, Props>(
     ];
 
     return (
-      <Card elevation={2} sx={{ p: 2, borderRadius: 3 }}>
-        <Typography variant="h6" fontWeight={700} color="secondary" mb={1}>
+      <Card
+        elevation={3}
+        sx={{
+          p: 3,
+          borderRadius: 4,
+          maxWidth: "100%",
+          overflowX: "auto",
+          bgcolor: "#f9fafb",
+        }}
+      >
+        <Typography variant="h6" fontWeight={700} color="secondary" mb={2}>
           تاریخچه قیمت‌ها
         </Typography>
 
-        <Box mb={2} display="flex" gap={2} alignItems="center">
+        <Box mb={2} display="flex" gap={2} alignItems="center" flexWrap="wrap">
           <FormControl size="small" sx={{ minWidth: 180 }}>
             <Select
               value={selectedStore}
@@ -177,28 +192,46 @@ const PriceHistoryTable = forwardRef<PriceHistoryTableRef, Props>(
           </FormControl>
         </Box>
 
-        <Box sx={{ width: "100%" }}>
+        <Box sx={{ width: "100%", minHeight: 400 }}>
           <DataGrid
             rows={prices.map((p) => ({
               ...p,
-              checked_at: new Date(p.checked_at).toLocaleString(),
+              checked_at: new Intl.DateTimeFormat("fa-IR", {
+                dateStyle: "medium",
+              }).format(new Date(p.checked_at)),
             }))}
             columns={columns}
             getRowId={(row) => row.id}
-            sx={{ minHeight: 400 }}
-            disableRowSelectionOnClick
             loading={loading}
+            sx={{
+              borderRadius: 2,
+              backgroundColor: "white",
+              "& .MuiDataGrid-cell": {
+                py: 1,
+              },
+              "& .MuiDataGrid-columnHeaders": {
+                backgroundColor: "#f0f4f8",
+              },
+              "& .MuiDataGrid-row:hover": {
+                backgroundColor: "#f9f9f9",
+              },
+            }}
+            disableRowSelectionOnClick
             rowHeight={52}
             hideFooter
+            localeText={{
+              noRowsLabel: loading ? "در حال بارگذاری..." : "رکوردی یافت نشد",
+            }}
           />
         </Box>
 
-        <Box display="flex" justifyContent="center" mt={2}>
+        <Box display="flex" justifyContent="center" mt={3}>
           <Pagination
             count={count}
             page={page}
             onChange={(_, value) => setPage(value)}
             color="primary"
+            size="medium"
           />
         </Box>
 
@@ -209,7 +242,7 @@ const PriceHistoryTable = forwardRef<PriceHistoryTableRef, Props>(
           maxWidth="xs"
           fullWidth
         >
-          <DialogTitle sx={{ fontWeight: 700 }}>تایید حذف قیمت</DialogTitle>
+          <DialogTitle fontWeight={700}>تایید حذف قیمت</DialogTitle>
           <DialogContent>
             آیا از حذف این رکورد قیمت مطمئن هستید؟ این عملیات قابل بازگشت نیست.
           </DialogContent>
@@ -222,9 +255,9 @@ const PriceHistoryTable = forwardRef<PriceHistoryTableRef, Props>(
               color="error"
               variant="contained"
               startIcon={
-                deletingId === confirmDialog.id && (
+                deletingId === confirmDialog.id ? (
                   <CircularProgress size={16} color="inherit" />
-                )
+                ) : null
               }
             >
               حذف

@@ -12,7 +12,10 @@ import EditIcon from "@mui/icons-material/Edit";
 import SaveIcon from "@mui/icons-material/Save";
 import LinkIcon from "@mui/icons-material/Link";
 import { useState } from "react";
-import type { StoreLink, Price, Product } from "../../pages/ProductView";
+import type { Product } from "../../types/product";
+import type { Price } from "../../types/Price";
+import type { StoreLink } from "../../types/StoreLink";
+import AddMissingLinksModal from "./AddMissingLinksModal";
 
 type Props = {
   product: Product;
@@ -42,6 +45,8 @@ export default function StoreLinksTable({
   getData,
 }: Props) {
   const [editableLinks, setEditableLinks] = useState<EditableLinkState>({});
+  const [modalOpen, setModalOpen] = useState(false);
+
   const theme = useTheme();
 
   const handleEditClick = (storeId: number, currentUrl: string) => {
@@ -104,7 +109,7 @@ export default function StoreLinksTable({
     fetch(
       `http://127.0.0.1:8000/api/storelinks/${storeLink.id}/update-price/`,
       { method: "POST" }
-    ).then(async (res: any) => {
+    ).then(async () => {
       setSnackbar({
         open: true,
         message: "قیمت بروزرسانی شد!",
@@ -136,6 +141,21 @@ export default function StoreLinksTable({
       <Typography variant="h6" fontWeight={700} color="primary" mb={2}>
         فروشگاه‌ها
       </Typography>
+      <Button
+        variant="outlined"
+        onClick={() => setModalOpen(true)}
+        sx={{ mb: 2 }}
+      >
+        افزودن لینک دستی
+      </Button>
+
+      <AddMissingLinksModal
+        product={product}
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        setSnackbar={setSnackbar}
+        setProduct={setProduct}
+      />
       <Box component="table" sx={{ width: "100%" }}>
         <Box component="thead" sx={{ bgcolor: theme.palette.background.paper }}>
           <Box component="tr">

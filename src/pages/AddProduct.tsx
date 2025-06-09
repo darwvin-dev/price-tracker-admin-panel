@@ -24,23 +24,12 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import Snackbar from "@mui/material/Snackbar";
 import MuiAlert from "@mui/material/Alert";
+import type {
+  ProductStreamResult,
+  StoreInfo,
+} from "../types/ProductStreamResult";
 
 const Alert = MuiAlert as React.ElementType;
-
-interface StoreInfo {
-  name: string;
-  module: string;
-}
-
-interface ProductStreamResult {
-  type: "stores" | "result";
-  stores?: StoreInfo[];
-  store?: StoreInfo;
-  url?: string;
-  price?: number;
-  found?: boolean;
-  error?: string;
-}
 
 const AddProduct = () => {
   const theme = useTheme();
@@ -60,7 +49,6 @@ const AddProduct = () => {
     severity: "success" | "info" | "warning" | "error";
   }>({ open: false, message: "", severity: "error" });
 
-  // --- عکس
   const [image, setImage] = useState<File | null>(null);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -113,7 +101,6 @@ const AddProduct = () => {
     setUrlOverrides((prev) => ({ ...prev, [storeName]: newUrl }));
   };
 
-  // شرط نمایش دکمه
   const isReadyToSubmit =
     !!productName &&
     loadingStores.length > 0 &&
@@ -123,7 +110,6 @@ const AddProduct = () => {
       return url.length > 0 && !!result;
     });
 
-  // تغییر عکس
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       setImage(e.target.files[0]);
@@ -137,7 +123,6 @@ const AddProduct = () => {
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
-  // ارسال محصول و انتقال به صفحه محصول
   const handleSubmit = async () => {
     setSubmitting(true);
     try {
@@ -435,16 +420,21 @@ const AddProduct = () => {
                           >
                             <Typography fontSize="15px">
                               <strong>قیمت:</strong>{" "}
-                              {result?.price ? (
-                                <span
-                                  style={{
-                                    color: theme.palette.success.main,
-                                    fontWeight: 700,
-                                  }}
-                                >
-                                  {result.price.toLocaleString()}{" "}
-                                  <small>ریال</small>
-                                </span>
+                              {result?.prices?.length ? (
+                                result?.prices.map((item, index) => (
+                                  <span
+                                    style={{
+                                      color: theme.palette.success.main,
+                                      fontWeight: 700,
+                                      display: 'block'
+                                    }}
+                                    key={`PRICE_RESULT_${item.variation}_${index}`}
+                                  >
+                                    {item.variation}:{" "}
+                                    {item?.price.toLocaleString()}{" "}
+                                    <small>ریال</small>
+                                  </span>
+                                ))
                               ) : (
                                 <span
                                   style={{
@@ -467,7 +457,6 @@ const AddProduct = () => {
                   );
                 })}
               </Box>
-              {/* دکمه افزودن محصول نهایی */}
               {isReadyToSubmit && (
                 <Box display="flex" justifyContent="center" mt={4}>
                   <Button

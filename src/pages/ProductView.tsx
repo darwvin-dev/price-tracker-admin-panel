@@ -10,33 +10,16 @@ import ProductSnackbar from "../components/productView/ProductSnackbar";
 import ProductHeader from "../components/productView/ProductHeader";
 import StoreLinksTable from "../components/productView/StoreLinksTable";
 import Spinner from "../components/Spinner";
-
-export type Price = {
-  id: number;
-  store: string;
-  price: number;
-  crawler_name: string;
-  checked_at: string;
-};
-export type StoreLink = {
-  id: number;
-  store: string;
-  url: string;
-};
-export type Product = {
-  id: number;
-  name: string;
-  image: string | null;
-  created_at: string;
-  store_links: StoreLink[];
-  price_history: Price[];
-  user_price_diff: number;
-};
+import type { Product } from "../types/product";
+import type { Price } from "../types/Price";
+import type { Variations } from "../types/variations";
 
 export default function ProductView() {
   const { id } = useParams<{ id: string }>();
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
+  const [variations, setVariations] = useState<Variations[]>([]);
+  const [selectedVariation, setSelectedVariation] = useState<string>("all");
 
   const priceHistoryRef = useRef<PriceHistoryTableRef>(null);
 
@@ -53,25 +36,37 @@ export default function ProductView() {
 
   const getData = useCallback(() => {
     setLoading(true);
-    axios.get(`http://127.0.0.1:8000/api/products/${id}/`).then((res) => {
-      setProduct(res.data);
-      const allStores = Array.from(
-        new Set((res.data.price_history as Price[]).map((p) => p.store))
-      );
-      setStores(allStores);
-      priceHistoryRef.current?.refresh();
-    })
-    .finally(() => setLoading(false));
-  }, [id]);
+    const params = new URLSearchParams();
+    if (selectedVariation !== "all") {
+      params.append("variation", selectedVariation);
+    }
+
+    axios
+      .get(`http://127.0.0.1:8000/api/products/${id}/?${params.toString()}`)
+      .then((res) => {
+        setProduct(res.data);
+        const allStores = Array.from(
+          new Set((res.data.price_history as Price[]).map((p) => p.store))
+        );
+        setStores(allStores);
+        priceHistoryRef.current?.refresh();
+      })
+      .finally(() => setLoading(false));
+  }, [id, selectedVariation]);
 
   useEffect(() => {
-    setLoading(true);
     getData();
-  }, [id, getData]);
+  }, [id, getData, selectedVariation]);
+
+  useEffect(() => {
+    if (!product) return;
+    setVariations(product.variations);
+  }, [product]);
 
   useEffect(() => {
     if (!product) return;
     let filtered = product.price_history;
+
     if (selectedStore !== "all") {
       filtered = filtered.filter((p) => p.store === selectedStore);
     }
@@ -84,7 +79,7 @@ export default function ProductView() {
             new Date(a.checked_at).getTime() - new Date(b.checked_at).getTime()
         )
     );
-  }, [product, selectedStore]);
+  }, [product, selectedStore, selectedVariation]);
 
   if (loading || !product || !id) {
     return <Spinner size={64} />;
@@ -122,6 +117,9 @@ export default function ProductView() {
         loading={loading}
         onUpdateAll={handleUpdate}
         setSnackbar={setSnackbar}
+        selectedVariation={selectedVariation}
+        onVariationChange={setSelectedVariation}
+        variations={variations}
       />
 
       <StoreLinksTable
