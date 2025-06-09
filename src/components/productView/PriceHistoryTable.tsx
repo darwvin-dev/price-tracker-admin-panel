@@ -221,7 +221,6 @@ const PriceHistoryTable = forwardRef<PriceHistoryTableRef, Props>(
               onClick={handleConfirmDelete}
               color="error"
               variant="contained"
-              disabled={deletingId !== confirmDialog.id}
               startIcon={
                 deletingId === confirmDialog.id && (
                   <CircularProgress size={16} color="inherit" />

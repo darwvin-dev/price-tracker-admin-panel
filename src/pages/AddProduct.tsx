@@ -22,6 +22,10 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import { useEffect, useState, useRef } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import Snackbar from "@mui/material/Snackbar";
+import MuiAlert from "@mui/material/Alert";
+
+const Alert = MuiAlert as React.ElementType;
 
 interface StoreInfo {
   name: string;
@@ -50,6 +54,11 @@ const AddProduct = () => {
   );
   const [loadingStores, setLoadingStores] = useState<StoreInfo[]>([]);
   const [submitting, setSubmitting] = useState(false);
+  const [snackbar, setSnackbar] = useState<{
+    open: boolean;
+    message: string;
+    severity: "success" | "info" | "warning" | "error";
+  }>({ open: false, message: "", severity: "error" });
 
   // --- عکس
   const [image, setImage] = useState<File | null>(null);
@@ -86,7 +95,14 @@ const AddProduct = () => {
   const dataResults = results.filter((res) => res.type === "result");
 
   const handleCheck = () => {
-    if (!input.trim()) return alert("نام محصول را وارد کنید.");
+    if (!input.trim()) {
+      setSnackbar({
+        open: true,
+        message: "⚠️ لطفاً نام محصول را وارد کنید.",
+        severity: "warning",
+      });
+      return;
+    }
     setProductName(input);
   };
 
@@ -101,7 +117,7 @@ const AddProduct = () => {
   const isReadyToSubmit =
     !!productName &&
     loadingStores.length > 0 &&
-    loadingStores.every((store) => {
+    loadingStores.some((store) => {
       const result = getResultForStore(store);
       const url = urlOverrides[store.name] ?? result?.url ?? "";
       return url.length > 0 && !!result;
@@ -130,25 +146,44 @@ const AddProduct = () => {
       formData.append(
         "links",
         JSON.stringify(
-          loadingStores.map((store) => {
-            const result = getResultForStore(store);
-            return {
-              store: store.name,
-              url: urlOverrides[store.name] ?? result?.url ?? "",
-              price: result?.price ?? null,
-            };
-          })
+          loadingStores
+            .map((store) => {
+              const result = getResultForStore(store);
+              const url = urlOverrides[store.name] ?? result?.url ?? "";
+              return url && result
+                ? {
+                    store: store.name,
+                    url,
+                    price: result.price ?? null,
+                  }
+                : null;
+            })
+            .filter(Boolean)
         )
       );
       if (image) {
         formData.append("image", image);
       }
-      const { data } = await axios.post("http://127.0.0.1:8000/api/products/", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
+      const { data } = await axios.post(
+        "http://127.0.0.1:8000/api/products/",
+        formData,
+        {
+          headers: { "Content-Type": "multipart/form-data" },
+        }
+      );
+      setSnackbar({
+        open: true,
+        message: "✅ محصول با موفقیت ثبت شد.",
+        severity: "success",
       });
       navigate(`/products/${data.id}`);
     } catch (err) {
-      alert("خطا در ثبت محصول. دوباره تلاش کنید.");
+      console.log(err);
+      setSnackbar({
+        open: true,
+        message: "خطا در ثبت محصول. لطفاً دوباره تلاش کنید.",
+        severity: "error",
+      });
     } finally {
       setSubmitting(false);
     }
@@ -461,6 +496,20 @@ const AddProduct = () => {
             </Box>
           )}
         </CardContent>
+        <Snackbar
+          open={snackbar.open}
+          autoHideDuration={5000}
+          onClose={() => setSnackbar((prev) => ({ ...prev, open: false }))}
+          anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+        >
+          <Alert
+            onClose={() => setSnackbar((prev) => ({ ...prev, open: false }))}
+            severity={snackbar.severity}
+            sx={{ width: "100%", fontWeight: 600 }}
+          >
+            {snackbar.message}
+          </Alert>
+        </Snackbar>
       </Card>
     </Fade>
   );

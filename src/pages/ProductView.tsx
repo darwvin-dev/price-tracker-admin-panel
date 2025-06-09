@@ -1,12 +1,15 @@
-import { Box, Skeleton } from "@mui/material";
+import { Box } from "@mui/material";
 import { useCallback, useEffect, useRef, useState } from "react";
 import axios from "axios";
 import { useParams } from "react-router-dom";
 import PriceChart from "../components/productView/PriceChart";
-import PriceHistoryTable, { type PriceHistoryTableRef } from "../components/productView/PriceHistoryTable";
+import PriceHistoryTable, {
+  type PriceHistoryTableRef,
+} from "../components/productView/PriceHistoryTable";
 import ProductSnackbar from "../components/productView/ProductSnackbar";
 import ProductHeader from "../components/productView/ProductHeader";
 import StoreLinksTable from "../components/productView/StoreLinksTable";
+import Spinner from "../components/Spinner";
 
 export type Price = {
   id: number;
@@ -27,6 +30,7 @@ export type Product = {
   created_at: string;
   store_links: StoreLink[];
   price_history: Price[];
+  user_price_diff: number;
 };
 
 export default function ProductView() {
@@ -49,20 +53,15 @@ export default function ProductView() {
 
   const getData = useCallback(() => {
     setLoading(true);
-    axios
-      .get(`http://127.0.0.1:8000/api/products/${id}/`)
-      .then((res) => {
-        setProduct(res.data);
-        const allStores = Array.from(
-          new Set((res.data.price_history as Price[]).map((p) => p.store))
-        );
-        setStores(allStores);
-        setSelectedStore((prev) =>
-          allStores.includes(prev) ? prev : allStores[0] || "all"
-        );
-        priceHistoryRef.current?.refresh()
-      })
-      .finally(() => setLoading(false));
+    axios.get(`http://127.0.0.1:8000/api/products/${id}/`).then((res) => {
+      setProduct(res.data);
+      const allStores = Array.from(
+        new Set((res.data.price_history as Price[]).map((p) => p.store))
+      );
+      setStores(allStores);
+      priceHistoryRef.current?.refresh();
+    })
+    .finally(() => setLoading(false));
   }, [id]);
 
   useEffect(() => {
@@ -88,7 +87,7 @@ export default function ProductView() {
   }, [product, selectedStore]);
 
   if (loading || !product || !id) {
-    return <Skeleton variant="rectangular" width="100%" height={500} />;
+    return <Spinner size={64} />;
   }
 
   const handleUpdate = async () => {
@@ -122,6 +121,7 @@ export default function ProductView() {
         product={product}
         loading={loading}
         onUpdateAll={handleUpdate}
+        setSnackbar={setSnackbar}
       />
 
       <StoreLinksTable
@@ -141,7 +141,6 @@ export default function ProductView() {
       />
 
       <PriceHistoryTable
-        
         stores={stores}
         setSnackbar={setSnackbar}
         productId={id}

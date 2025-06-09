@@ -5,6 +5,7 @@ import {
   Button,
   InputBase,
   IconButton,
+  useTheme,
 } from "@mui/material";
 import AutorenewIcon from "@mui/icons-material/Autorenew";
 import EditIcon from "@mui/icons-material/Edit";
@@ -25,7 +26,7 @@ type Props = {
     }>
   >;
   loading: boolean;
-  getData: () => void
+  getData: () => void;
 };
 
 type EditableLinkState = {
@@ -38,9 +39,10 @@ export default function StoreLinksTable({
   setProduct,
   setSnackbar,
   loading,
-  getData
+  getData,
 }: Props) {
   const [editableLinks, setEditableLinks] = useState<EditableLinkState>({});
+  const theme = useTheme();
 
   const handleEditClick = (storeId: number, currentUrl: string) => {
     setEditableLinks((prev) => ({
@@ -99,29 +101,27 @@ export default function StoreLinksTable({
       message: "در حال بروزرسانی قیمت فروشگاه...",
       severity: "info",
     });
-    try {
-      await fetch(
-        `http://127.0.0.1:8000/api/storelinks/${storeLink.id}/update-price/`,
-        { method: "POST" }
-      );
+    fetch(
+      `http://127.0.0.1:8000/api/storelinks/${storeLink.id}/update-price/`,
+      { method: "POST" }
+    ).then(async (res: any) => {
       setSnackbar({
         open: true,
         message: "قیمت بروزرسانی شد!",
         severity: "success",
       });
-      const res = await fetch(
+      const productRes = await fetch(
         `http://127.0.0.1:8000/api/products/${product.id}/`
       );
-      const data = await res.json();
+      const data = await productRes.json();
       setProduct(data);
-      getData()
-    } catch {
+      getData();
       setSnackbar({
         open: true,
         message: "بروزرسانی انجام نشد!",
         severity: "error",
       });
-    }
+    });
   };
 
   if (!product.store_links.length)
@@ -137,7 +137,7 @@ export default function StoreLinksTable({
         فروشگاه‌ها
       </Typography>
       <Box component="table" sx={{ width: "100%" }}>
-        <Box component="thead" sx={{ bgcolor: "#f8fafc" }}>
+        <Box component="thead" sx={{ bgcolor: theme.palette.background.paper }}>
           <Box component="tr">
             <Box component="th" sx={{ p: 1 }}>
               نام فروشگاه

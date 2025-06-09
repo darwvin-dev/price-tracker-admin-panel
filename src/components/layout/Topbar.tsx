@@ -17,6 +17,7 @@ import NotificationsIcon from "@mui/icons-material/Notifications";
 import Brightness4Icon from "@mui/icons-material/Brightness4";
 import Brightness7Icon from "@mui/icons-material/Brightness7";
 import { useState } from "react";
+import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 
 interface TopbarProps {
   onSidebarToggle: () => void;
@@ -43,6 +44,7 @@ const Topbar = ({ onSidebarToggle, toggleTheme, mode }: TopbarProps) => {
         backgroundColor: theme.palette.background.paper,
         borderBottom: `1px solid ${theme.palette.divider}`,
         zIndex: (t) => t.zIndex.drawer + 1,
+        direction: "ltr"
       }}
     >
       <Toolbar
@@ -97,10 +99,12 @@ const Topbar = ({ onSidebarToggle, toggleTheme, mode }: TopbarProps) => {
           <Tooltip title="حساب کاربری">
             <IconButton onClick={handleAvatarClick}>
               <Avatar
-                src="https://i.pravatar.cc/300"
                 alt="User"
                 sx={{ width: 32, height: 32 }}
-              />
+              >
+                      <AccountCircleIcon fontSize="small" />
+
+              </Avatar>
             </IconButton>
           </Tooltip>
 
