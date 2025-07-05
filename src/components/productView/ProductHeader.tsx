@@ -62,7 +62,7 @@ export default function ProductHeader({
     setSaving(true);
     try {
       await axios.patch(
-        `http://127.0.0.1:8000/api/products/${product.id}/update/`,
+        `${import.meta.env.VITE_API_URL}api/products/${product.id}/update/`,
         formData
       );
       window.location.reload();
@@ -82,7 +82,7 @@ export default function ProductHeader({
       const formData = new FormData();
       formData.append("user_price_diff", priceDiff);
       await axios.patch(
-        `http://127.0.0.1:8000/api/products/${product.id}/update/`,
+        `${import.meta.env.VITE_API_URL}api/products/${product.id}/update/`,
         formData
       );
       setSnackbar({

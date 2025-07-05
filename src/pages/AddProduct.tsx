@@ -56,7 +56,7 @@ const AddProduct = () => {
   useEffect(() => {
     if (!productName) return;
     const eventSource = new EventSource(
-      `http://127.0.0.1:8000/stream/check/?product_name=${encodeURIComponent(
+      `${import.meta.env.VITE_API_URL}stream/check/?product_name=${encodeURIComponent(
         productName
       )}`
     );
@@ -150,7 +150,7 @@ const AddProduct = () => {
         formData.append("image", image);
       }
       const { data } = await axios.post(
-        "http://127.0.0.1:8000/api/products/",
+        `${import.meta.env.VITE_API_URL}api/products/`,
         formData,
         {
           headers: { "Content-Type": "multipart/form-data" },

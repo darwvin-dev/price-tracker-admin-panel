@@ -57,7 +57,7 @@ const PriceHistoryTable = forwardRef<PriceHistoryTableRef, Props>(
       setLoading(true);
       try {
         const res = await axios.get(
-          `http://127.0.0.1:8000/api/products/${productId}/all-price-history/`,
+          `${import.meta.env.VITE_API_URL}api/products/${productId}/all-price-history/`,
           {
             params: {
               store: selectedStore,
@@ -96,7 +96,7 @@ const PriceHistoryTable = forwardRef<PriceHistoryTableRef, Props>(
       setDeletingId(confirmDialog.id);
       try {
         await axios.delete(
-          `http://127.0.0.1:8000/api/delete-price-history/${confirmDialog.id}/`
+          `${import.meta.env.VITE_API_URL}api/delete-price-history/${confirmDialog.id}/`
         );
         setSnackbar({
           open: true,

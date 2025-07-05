@@ -65,7 +65,7 @@ export default function StoreLinksTable({
 
   const handleSaveClick = async (storeLink: StoreLink) => {
     try {
-      await fetch(`http://127.0.0.1:8000/api/storelinks/${storeLink.id}/`, {
+      await fetch(`${import.meta.env.VITE_API_URL}api/storelinks/${storeLink.id}/`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ url: editableLinks[storeLink.id].url }),
@@ -107,7 +107,7 @@ export default function StoreLinksTable({
       severity: "info",
     });
     fetch(
-      `http://127.0.0.1:8000/api/storelinks/${storeLink.id}/update-price/`,
+      `${import.meta.env.VITE_API_URL}api/storelinks/${storeLink.id}/update-price/`,
       { method: "POST" }
     ).then(async () => {
       setSnackbar({
@@ -116,7 +116,7 @@ export default function StoreLinksTable({
         severity: "success",
       });
       const productRes = await fetch(
-        `http://127.0.0.1:8000/api/products/${product.id}/`
+        `${import.meta.env.VITE_API_URL}api/products/${product.id}/`
       );
       const data = await productRes.json();
       setProduct(data);

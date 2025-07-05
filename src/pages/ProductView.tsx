@@ -42,7 +42,7 @@ export default function ProductView() {
     }
 
     axios
-      .get(`http://127.0.0.1:8000/api/products/${id}/?${params.toString()}`)
+      .get(`${import.meta.env.VITE_API_URL}api/products/${id}/?${params.toString()}`)
       .then((res) => {
         setProduct(res.data);
         const allStores = Array.from(
@@ -89,14 +89,14 @@ export default function ProductView() {
     setLoading(true);
     try {
       await axios.post(
-        `http://127.0.0.1:8000/api/products/${id}/update-prices/`
+        `${import.meta.env.VITE_API_URL}api/products/${id}/update-prices/`
       );
       setSnackbar({
         open: true,
         message: "قیمت‌ها بروزرسانی شدند!",
         severity: "success",
       });
-      const res = await axios.get(`http://127.0.0.1:8000/api/products/${id}/`);
+      const res = await axios.get(`${import.meta.env.VITE_API_URL}api/products/${id}/`);
       setProduct(res.data);
     } catch {
       setSnackbar({

@@ -24,7 +24,7 @@ const StoresPage = () => {
   const [stores, setStores] = useState<Store[]>([]);
 
   const fetchStores = () => {
-    axios.get("http://localhost:8000/api/stores/").then((res) => {
+    axios.get(`${import.meta.env.VITE_API_URL}api/stores/`).then((res) => {
       setStores(res.data);
     });
   };
@@ -35,7 +35,7 @@ const StoresPage = () => {
 
   const toggleStoreIsCore = (id: number) => {
     axios
-      .post(`http://localhost:8000/api/stores/${id}/toggle-core/`)
+      .post(`${import.meta.env.VITE_API_URL}api/stores/${id}/toggle-core/`)
       .then(() => {
         // Option 1: re-fetch
         fetchStores();
@@ -72,7 +72,7 @@ const StoresPage = () => {
             <TableBody>
               {stores.map((store) => (
                 <TableRow key={store.id}>
-                  <TableCell align="center">{store.name}</TableCell>
+                  <TableCell align="center" className="store-name">{store.name}</TableCell>
                   <TableCell align="center">{store.module_name}</TableCell>
                   <TableCell align="center">
                     <Chip

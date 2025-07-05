@@ -22,7 +22,7 @@ const Alerts = () => {
   const theme = useTheme();
 
   const fetchAlerts = () => {
-    axios.get("http://localhost:8000/api/alerts/").then((res) => {
+    axios.get(`${import.meta.env.VITE_API_URL}api/alerts/`).then((res) => {
       setAlerts(res.data);
       setLoading(false);
     });
@@ -31,7 +31,7 @@ const Alerts = () => {
   const markAsRead = (id: number) => {
     setUpdatingId(id);
     axios
-      .patch(`http://localhost:8000/api/alerts/${id}/`, { read_on_site: true })
+      .patch(`${import.meta.env.VITE_API_URL}api/alerts/${id}/`, { read_on_site: true })
       .then(() => fetchAlerts())
       .finally(() => setUpdatingId(null));
   };

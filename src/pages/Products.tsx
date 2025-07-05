@@ -38,7 +38,7 @@ const Products = () => {
 
   useEffect(() => {
     axios
-      .get("http://localhost:8000/api/products/")
+      .get(`${import.meta.env.VITE_API_URL}api/products/`)
       .then((res) => setProducts(res.data));
   }, []);
 
@@ -47,7 +47,7 @@ const Products = () => {
 
   const handleDelete = () => {
     if (deleteId === null) return;
-    axios.delete(`http://localhost:8000/api/products/${deleteId}/delete/`).then(() => {
+    axios.delete(`${import.meta.env.VITE_API_URL}api/products/${deleteId}/delete/`).then(() => {
       setProducts(products.filter((p) => p.id !== deleteId));
       setDeleteId(null);
     });
@@ -56,10 +56,10 @@ const Products = () => {
   const handleUpdatePrices = (id: number) => {
     setUpdating(true);
     axios
-      .post(`http://localhost:8000/api/products/${id}/update-prices/`)
+      .post(`${import.meta.env.VITE_API_URL}api/products/${id}/update-prices/`)
       .then(() => {
         axios
-          .get("http://localhost:8000/api/products/")
+          .get(`${import.meta.env.VITE_API_URL}api/products/`)
           .then((res) => setProducts(res.data));
       })
       .finally(() => setUpdating(false));

@@ -29,7 +29,7 @@ export default function AddMissingLinksModal({
   const [links, setLinks] = useState<{ [store: string]: string }>({});
 
   useEffect(() => {
-    fetch("http://127.0.0.1:8000/api/stores/")
+    fetch(`${import.meta.env.VITE_API_URL}api/stores/`)
       .then((res) => res.json())
       .then(setAllStores);
   }, []);
@@ -44,7 +44,7 @@ export default function AddMissingLinksModal({
     if (!url) return;
 
     try {
-      const res = await fetch("http://127.0.0.1:8000/api/storelinks/add/", {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}api/storelinks/add/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ product_id: product.id, store: storeName, url }),
@@ -52,7 +52,7 @@ export default function AddMissingLinksModal({
 
       if (res.ok) {
         const updatedProduct = await fetch(
-          `http://127.0.0.1:8000/api/products/${product.id}/`
+          `${import.meta.env.VITE_API_URL}api/products/${product.id}/`
         ).then((r) => r.json());
         setProduct(updatedProduct);
         setSnackbar({
