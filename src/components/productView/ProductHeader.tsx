@@ -8,7 +8,6 @@ import {
   Box,
   Chip,
   TextField,
-  MenuItem,
 } from "@mui/material";
 import AutorenewIcon from "@mui/icons-material/Autorenew";
 import TrendingUpIcon from "@mui/icons-material/TrendingUp";
@@ -17,22 +16,15 @@ import AttachMoneyIcon from "@mui/icons-material/AttachMoney";
 import { useRef, useState } from "react";
 import axios from "axios";
 import type { Product } from "../../types/product";
-import type { Variations } from "../../types/variations";
 
 export default function ProductHeader({
   product,
   loading,
   onUpdateAll,
   setSnackbar,
-  selectedVariation,
-  onVariationChange,
-  variations,
 }: {
   product: Product;
   loading: boolean;
-  variations: Variations[];
-  onVariationChange: (v: string) => void;
-  selectedVariation: string;
   onUpdateAll: () => void;
   setSnackbar: (args: {
     open: boolean;
@@ -135,7 +127,7 @@ export default function ProductHeader({
 
       <CardContent sx={{ flex: 1 }}>
         <Typography variant="h5" fontWeight={900} color="primary">
-          {product.name}
+          {product.name} {product.color}
         </Typography>
         <Typography fontSize="15px" color="text.secondary" mt={1}>
           <strong>تاریخ ثبت:</strong>{" "}
@@ -145,24 +137,6 @@ export default function ProductHeader({
             day: "numeric",
           }).format(new Date(product.created_at))}
         </Typography>
-
-        <Box mt={2}>
-          <TextField
-            select
-            label="تنوع محصول"
-            value={selectedVariation}
-            onChange={(e) => onVariationChange(e.target.value)}
-            size="small"
-            sx={{ width: 200 }}
-          >
-            <MenuItem value="all">همه تنوع‌ها</MenuItem>
-            {variations.map((v) => (
-              <MenuItem key={v.id} value={v.id}>
-                {v.name}
-              </MenuItem>
-            ))}
-          </TextField>
-        </Box>
 
         <Box mt={2} display="flex" alignItems="center" gap={2}>
           <TextField

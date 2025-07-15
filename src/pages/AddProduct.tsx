@@ -28,6 +28,8 @@ import type {
   ProductStreamResult,
   StoreInfo,
 } from "../types/ProductStreamResult";
+import type { Category } from "../types/Category";
+import CategorySelector from "../components/CategorySelector";
 
 const Alert = MuiAlert as React.ElementType;
 
@@ -41,6 +43,7 @@ const AddProduct = () => {
   const [urlOverrides, setUrlOverrides] = useState<{ [key: string]: string }>(
     {}
   );
+  const [selectedCategories, setSelectedCategories] = useState<Category[]>([]);
   const [loadingStores, setLoadingStores] = useState<StoreInfo[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [snackbar, setSnackbar] = useState<{
@@ -68,6 +71,7 @@ const AddProduct = () => {
         const data: ProductStreamResult = JSON.parse(event.data);
         if (data.type === "stores" && data.stores)
           setLoadingStores(data.stores);
+        console.log(data)
         setResults((prev) => [...prev, data]);
       } catch (error) {
         console.warn("❌ JSON parse error", error);
@@ -134,12 +138,14 @@ const AddProduct = () => {
           loadingStores
             .map((store) => {
               const result = getResultForStore(store);
+              console.log(result)
               const url = urlOverrides[store.name] ?? result?.url ?? "";
               return url && result
                 ? {
                     store: store.name,
                     url,
                     price: result.price ?? null,
+                    helper: result.helper
                   }
                 : null;
             })
@@ -149,7 +155,10 @@ const AddProduct = () => {
       if (image) {
         formData.append("image", image);
       }
-      const { data } = await axios.post(
+      selectedCategories.forEach((cat) => {
+        formData.append("categories[]", cat.id.toString());
+      });
+      await axios.post(
         `${import.meta.env.VITE_API_URL}api/products/`,
         formData,
         {
@@ -161,7 +170,7 @@ const AddProduct = () => {
         message: "✅ محصول با موفقیت ثبت شد.",
         severity: "success",
       });
-      navigate(`/products/${data.id}`);
+      navigate(`/products`);
     } catch (err) {
       console.log(err);
       setSnackbar({
@@ -304,6 +313,11 @@ const AddProduct = () => {
             )}
           </Box>
 
+        <CategorySelector
+          selectedCategories={selectedCategories}
+          onChange={setSelectedCategories}
+        />
+
           {productName && (
             <Typography
               fontSize="14px"
@@ -421,16 +435,16 @@ const AddProduct = () => {
                             <Typography fontSize="15px">
                               <strong>قیمت:</strong>{" "}
                               {result?.prices?.length ? (
-                                result?.prices.map((item, index) => (
+                                result?.prices?.map((item, index) => (
                                   <span
                                     style={{
                                       color: theme.palette.success.main,
                                       fontWeight: 700,
                                       display: 'block'
                                     }}
-                                    key={`PRICE_RESULT_${item.variation}_${index}`}
+                                    key={`PRICE_RESULT_${item.color}_${index}`}
                                   >
-                                    {item.variation}:{" "}
+                                    {item.color}:{" "}
                                     {item?.price.toLocaleString()}{" "}
                                     <small>ریال</small>
                                   </span>
@@ -446,11 +460,7 @@ const AddProduct = () => {
                               )}
                             </Typography>
                           </Box>
-                          {result?.error && (
-                            <Typography color="error" fontSize="14px" mt={0.5}>
-                              <strong>خطا:</strong> {result.error}
-                            </Typography>
-                          )}
+                        
                         </>
                       )}
                     </Paper>

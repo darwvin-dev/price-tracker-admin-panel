@@ -14,6 +14,7 @@ import {
   Notifications,
   BarChart,
   Settings,
+  Category
 } from '@mui/icons-material';
 import { Link, useLocation } from 'react-router-dom';
 
@@ -27,8 +28,9 @@ interface SidebarProps {
 const navItems = [
   { icon: <ShoppingCart />, to: '/products', label: 'محصولات' },
   { icon: <Store />, to: '/stores', label: 'فروشگاه‌ها' },
+  { icon: <Category />, to: '/categories', label: 'دسته‌بندی‌ها' },
   { icon: <Notifications />, to: '/alerts', label: 'هشدارها' },
-  { icon: <BarChart />, to: '/reports', label: 'گزارش‌ها' },
+  { icon: <BarChart />, to: '/export', label: 'خروجی' },
   { icon: <Settings />, to: '/settings', label: 'تنظیمات' },
 ];
 

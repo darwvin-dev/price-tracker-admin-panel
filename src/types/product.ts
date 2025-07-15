@@ -5,6 +5,7 @@ import type { Variations } from "./variations";
 export type Product = {
   id: number;
   store_links: StoreLink[];
+  color: string;
   price_history: Price[];
   user_price_diff: number;
   name: string;

@@ -19,6 +19,8 @@ import {
   DialogContentText,
   DialogActions,
   CircularProgress,
+  Checkbox,
+  TextField,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import VisibilityIcon from "@mui/icons-material/Visibility";
@@ -26,31 +28,70 @@ import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import axios from "axios";
 import type { Product } from "../types/product";
+import CategorySelector from "../components/CategorySelector";
 
 const Products = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [updating, setUpdating] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<number[]>([]);
+
+  const [selectedCategories, setSelectedCategories] = useState<number[]>([]);
+  const [minPrice, setMinPrice] = useState<string>("");
+  const [maxPrice, setMaxPrice] = useState<string>("");
+
   const theme = useTheme();
   const navigate = useNavigate();
 
   const handleAddProduct = () => navigate("/add-product");
 
   useEffect(() => {
-    axios
-      .get(`${import.meta.env.VITE_API_URL}api/products/`)
-      .then((res) => setProducts(res.data));
-  }, []);
+    const fetchProducts = () => {
+      const params = new URLSearchParams();
+
+      selectedCategories.forEach((id) =>
+        params.append("category", id.toString())
+      );
+
+      if (minPrice.trim() !== "") params.append("min_price", minPrice);
+      if (maxPrice.trim() !== "") params.append("max_price", maxPrice);
+
+      axios
+        .get(
+          `${import.meta.env.VITE_API_URL}api/products/?${params.toString()}`
+        )
+        .then((res) => setProducts(res.data));
+    };
+
+    fetchProducts();
+  }, [selectedCategories, minPrice, maxPrice]);
 
   const handleOpenDeleteModal = (id: number) => setDeleteId(id);
   const handleCloseDeleteModal = () => setDeleteId(null);
 
   const handleDelete = () => {
     if (deleteId === null) return;
-    axios.delete(`${import.meta.env.VITE_API_URL}api/products/${deleteId}/delete/`).then(() => {
-      setProducts(products.filter((p) => p.id !== deleteId));
-      setDeleteId(null);
-    });
+
+    if (deleteId === -1) {
+      axios
+        .post(`${import.meta.env.VITE_API_URL}api/products/bulk-delete/`, {
+          ids: selectedIds,
+        })
+        .then(() => {
+          setProducts(products.filter((p) => !selectedIds.includes(p.id)));
+          setSelectedIds([]);
+          setDeleteId(null);
+        });
+    } else {
+      axios
+        .delete(
+          `${import.meta.env.VITE_API_URL}api/products/${deleteId}/delete/`
+        )
+        .then(() => {
+          setProducts(products.filter((p) => p.id !== deleteId));
+          setDeleteId(null);
+        });
+    }
   };
 
   const handleUpdatePrices = (id: number) => {
@@ -100,23 +141,65 @@ const Products = () => {
         <Typography variant="h5" fontWeight={700} color="text.primary">
           📦 لیست محصولات
         </Typography>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={handleAddProduct}
-          sx={{
-            borderRadius: 2,
-            px: 3,
-            py: 1,
-            backgroundColor: theme.palette.primary.main,
-            "&:hover": {
-              backgroundColor:
-                theme.palette.primary.dark || theme.palette.primary.main,
-            },
-          }}
-        >
-          افزودن محصول جدید
-        </Button>
+        <Box display="flex" gap={2} flexWrap="wrap" alignItems="center">
+          <CategorySelector
+            selectedCategories={selectedCategories.map((id) => ({
+              id,
+              name: "",
+            }))}
+            onChange={(cats) => setSelectedCategories(cats.map((c) => c.id))}
+          />
+
+          <TextField
+            label="حداقل قیمت (ریال)"
+            value={Number(minPrice).toLocaleString()}
+            onChange={(e) => {
+              const raw = e.target.value.replace(/,/g, "");
+              if (/^\d*$/.test(raw)) setMinPrice(raw);
+            }}
+            size="small"
+            sx={{ width: 150 }}
+            inputProps={{ inputMode: "numeric" }}
+          />
+
+          <TextField
+            label="حداکثر قیمت (ریال)"
+            value={Number(maxPrice).toLocaleString()}
+            onChange={(e) => {
+              const raw = e.target.value.replace(/,/g, "");
+              if (/^\d*$/.test(raw)) setMaxPrice(raw);
+            }}
+            size="small"
+            sx={{ width: 150 }}
+            inputProps={{ inputMode: "numeric" }}
+          />
+
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={handleAddProduct}
+            sx={{
+              borderRadius: 2,
+              px: 3,
+              py: 1,
+              backgroundColor: theme.palette.primary.main,
+              "&:hover": {
+                backgroundColor:
+                  theme.palette.primary.dark || theme.palette.primary.main,
+              },
+            }}
+          >
+            افزودن محصول جدید
+          </Button>
+          <Button
+            variant="outlined"
+            color="error"
+            disabled={selectedIds.length === 0}
+            onClick={() => setDeleteId(-1)}
+          >
+            حذف دسته‌ای ({selectedIds.length})
+          </Button>
+        </Box>
       </Box>
 
       {/* Table */}
@@ -132,6 +215,26 @@ const Products = () => {
         <Table stickyHeader size="small" sx={{ minWidth: 950 }}>
           <TableHead>
             <TableRow>
+              <TableCell padding="checkbox">
+                <Checkbox
+                  color="primary"
+                  indeterminate={
+                    selectedIds.length > 0 &&
+                    selectedIds.length < products.length
+                  }
+                  checked={
+                    products.length > 0 &&
+                    selectedIds.length === products.length
+                  }
+                  onChange={(e) => {
+                    if (e.target.checked) {
+                      setSelectedIds(products.map((p) => p.id));
+                    } else {
+                      setSelectedIds([]);
+                    }
+                  }}
+                />
+              </TableCell>
               {[
                 "تصویر",
                 "نام محصول",
@@ -173,6 +276,20 @@ const Products = () => {
                     "&:hover": { backgroundColor: theme.palette.action.hover },
                   }}
                 >
+                  <TableCell padding="checkbox">
+                    <Checkbox
+                      color="primary"
+                      checked={selectedIds.includes(p.id)}
+                      onChange={() => {
+                        setSelectedIds((prev) =>
+                          prev.includes(p.id)
+                            ? prev.filter((id) => id !== p.id)
+                            : [...prev, p.id]
+                        );
+                      }}
+                    />
+                  </TableCell>
+
                   <TableCell align="center">
                     <Avatar
                       variant="rounded"
@@ -198,7 +315,7 @@ const Products = () => {
                         color: theme.palette.text.primary,
                       }}
                     >
-                      {p.name}
+                      {p.name} {p.color}
                     </Typography>
                   </TableCell>
                   <TableCell align="center" sx={{ fontWeight: 600 }}>
@@ -281,7 +398,11 @@ const Products = () => {
         </Table>
       </Paper>
 
-      <Dialog open={deleteId !== null} onClose={handleCloseDeleteModal} dir="rtl">
+      <Dialog
+        open={deleteId !== null}
+        onClose={handleCloseDeleteModal}
+        dir="rtl"
+      >
         <DialogTitle>حذف محصول</DialogTitle>
         <DialogContent>
           <DialogContentText>

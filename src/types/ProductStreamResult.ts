@@ -4,9 +4,10 @@ export interface ProductStreamResult {
   store?: StoreInfo;
   url?: string;
   price?: number;
-  prices?: { variation: string; price: number }[];
+  prices?: { color: string; price: number }[];
   found?: boolean;
   error?: string;
+  helper?: object
 }
 
 export interface StoreInfo {

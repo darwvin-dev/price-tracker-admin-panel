@@ -12,14 +12,11 @@ import StoreLinksTable from "../components/productView/StoreLinksTable";
 import Spinner from "../components/Spinner";
 import type { Product } from "../types/product";
 import type { Price } from "../types/Price";
-import type { Variations } from "../types/variations";
 
 export default function ProductView() {
   const { id } = useParams<{ id: string }>();
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
-  const [variations, setVariations] = useState<Variations[]>([]);
-  const [selectedVariation, setSelectedVariation] = useState<string>("all");
 
   const priceHistoryRef = useRef<PriceHistoryTableRef>(null);
 
@@ -37,12 +34,13 @@ export default function ProductView() {
   const getData = useCallback(() => {
     setLoading(true);
     const params = new URLSearchParams();
-    if (selectedVariation !== "all") {
-      params.append("variation", selectedVariation);
-    }
 
     axios
-      .get(`${import.meta.env.VITE_API_URL}api/products/${id}/?${params.toString()}`)
+      .get(
+        `${
+          import.meta.env.VITE_API_URL
+        }api/products/${id}/?${params.toString()}`
+      )
       .then((res) => {
         setProduct(res.data);
         const allStores = Array.from(
@@ -52,16 +50,11 @@ export default function ProductView() {
         priceHistoryRef.current?.refresh();
       })
       .finally(() => setLoading(false));
-  }, [id, selectedVariation]);
+  }, [id]);
 
   useEffect(() => {
     getData();
-  }, [id, getData, selectedVariation]);
-
-  useEffect(() => {
-    if (!product) return;
-    setVariations(product.variations);
-  }, [product]);
+  }, [id, getData]);
 
   useEffect(() => {
     if (!product) return;
@@ -79,7 +72,7 @@ export default function ProductView() {
             new Date(a.checked_at).getTime() - new Date(b.checked_at).getTime()
         )
     );
-  }, [product, selectedStore, selectedVariation]);
+  }, [product, selectedStore]);
 
   if (loading || !product || !id) {
     return <Spinner size={64} />;
@@ -96,7 +89,9 @@ export default function ProductView() {
         message: "قیمت‌ها بروزرسانی شدند!",
         severity: "success",
       });
-      const res = await axios.get(`${import.meta.env.VITE_API_URL}api/products/${id}/`);
+      const res = await axios.get(
+        `${import.meta.env.VITE_API_URL}api/products/${id}/`
+      );
       setProduct(res.data);
     } catch {
       setSnackbar({
@@ -117,9 +112,6 @@ export default function ProductView() {
         loading={loading}
         onUpdateAll={handleUpdate}
         setSnackbar={setSnackbar}
-        selectedVariation={selectedVariation}
-        onVariationChange={setSelectedVariation}
-        variations={variations}
       />
 
       <StoreLinksTable
