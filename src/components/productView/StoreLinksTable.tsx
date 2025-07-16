@@ -65,11 +65,14 @@ export default function StoreLinksTable({
 
   const handleSaveClick = async (storeLink: StoreLink) => {
     try {
-      await fetch(`${import.meta.env.VITE_API_URL}api/storelinks/${storeLink.id}/`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url: editableLinks[storeLink.id].url }),
-      });
+      await fetch(
+        `${import.meta.env.VITE_API_URL}api/storelinks/${storeLink.id}/`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ url: editableLinks[storeLink.id].url }),
+        }
+      );
       setProduct((old) =>
         old
           ? {
@@ -107,26 +110,32 @@ export default function StoreLinksTable({
       severity: "info",
     });
     fetch(
-      `${import.meta.env.VITE_API_URL}api/storelinks/${storeLink.id}/update-price/`,
+      `${import.meta.env.VITE_API_URL}api/storelinks/${
+        storeLink.id
+      }/update-price/`,
       { method: "POST" }
-    ).then(async () => {
-      setSnackbar({
-        open: true,
-        message: "قیمت بروزرسانی شد!",
-        severity: "success",
-      });
-      const productRes = await fetch(
-        `${import.meta.env.VITE_API_URL}api/products/${product.id}/`
-      );
-      const data = await productRes.json();
-      setProduct(data);
-      getData();
-      setSnackbar({
-        open: true,
-        message: "بروزرسانی انجام نشد!",
-        severity: "error",
-      });
-    });
+    )
+      .then(async (res) => {
+        if(res.status === 201){
+          setSnackbar({
+            open: true,
+            message: "قیمت بروزرسانی شد!",
+            severity: "success",
+          });
+        }else{
+          setSnackbar({
+            open: true,
+            message: "بروزرسانی انجام نشد!",
+            severity: "error",
+          });
+        }
+        const productRes = await fetch(
+          `${import.meta.env.VITE_API_URL}api/products/${product.id}/`
+        );
+        const data = await productRes.json();
+        setProduct(data);
+        getData();
+      })
   };
 
   if (!product.store_links.length)
