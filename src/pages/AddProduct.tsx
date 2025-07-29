@@ -59,9 +59,9 @@ const AddProduct = () => {
   useEffect(() => {
     if (!productName) return;
     const eventSource = new EventSource(
-      `${import.meta.env.VITE_API_URL}stream/check/?product_name=${encodeURIComponent(
-        productName
-      )}`
+      `${
+        import.meta.env.VITE_API_URL
+      }stream/check/?product_name=${encodeURIComponent(productName)}`
     );
     setConnected(false);
     setResults([]);
@@ -71,7 +71,7 @@ const AddProduct = () => {
         const data: ProductStreamResult = JSON.parse(event.data);
         if (data.type === "stores" && data.stores)
           setLoadingStores(data.stores);
-        console.log(data)
+        console.log(data);
         setResults((prev) => [...prev, data]);
       } catch (error) {
         console.warn("❌ JSON parse error", error);
@@ -101,8 +101,52 @@ const AddProduct = () => {
   const getResultForStore = (store: StoreInfo) =>
     dataResults.find((res) => res.store?.name === store.name);
 
-  const handleUrlChange = (storeName: string, newUrl: string) => {
+  const handleUrlChange = async (storeName: string, newUrl: string) => {
     setUrlOverrides((prev) => ({ ...prev, [storeName]: newUrl }));
+
+    if (!newUrl || newUrl.length < 5 || !productName) return;
+    const formData = new FormData();
+    formData.append("store", storeName);
+    formData.append("url", newUrl);
+
+    try {
+      const response = await axios.post(
+        `${import.meta.env.VITE_API_URL}api/storelinks/check-price/`,
+        formData
+      );
+
+      const prices = response.data;
+
+      const updatedResult: ProductStreamResult = {
+        type: "result",
+        store: { name: storeName },
+        url: newUrl,
+        prices,
+      };
+
+      setResults((prev) => {
+        const others = prev.filter(
+          (r) => r.type !== "result" || r.store?.name !== storeName
+        );
+        return [...others, updatedResult];
+      });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (err: any) {
+      console.error("❌ قیمت‌گذاری شکست خورد:", err);
+      const errorResult: ProductStreamResult = {
+        type: "result",
+        store: { name: storeName },
+        url: newUrl,
+        error: err.response?.data?.detail || "خطا در دریافت قیمت",
+      };
+
+      setResults((prev) => {
+        const others = prev.filter(
+          (r) => r.type !== "result" || r.store?.name !== storeName
+        );
+        return [...others, errorResult];
+      });
+    }
   };
 
   const isReadyToSubmit =
@@ -138,14 +182,14 @@ const AddProduct = () => {
           loadingStores
             .map((store) => {
               const result = getResultForStore(store);
-              console.log(result)
+              console.log(result);
               const url = urlOverrides[store.name] ?? result?.url ?? "";
               return url && result
                 ? {
                     store: store.name,
                     url,
                     price: result.price ?? null,
-                    helper: result.helper
+                    helper: result.helper,
                   }
                 : null;
             })
@@ -313,10 +357,10 @@ const AddProduct = () => {
             )}
           </Box>
 
-        <CategorySelector
-          selectedCategories={selectedCategories}
-          onChange={setSelectedCategories}
-        />
+          <CategorySelector
+            selectedCategories={selectedCategories}
+            onChange={setSelectedCategories}
+          />
 
           {productName && (
             <Typography
@@ -388,7 +432,7 @@ const AddProduct = () => {
                           color={hasUrl && !error ? "success" : "disabled"}
                         />
                         <Typography fontWeight={700} color="primary.dark">
-                          فروشگاه: {store.name}
+                          فروشگاه: {store.name} {store.is_core ? "⭐" : ""}
                         </Typography>
                         {loading && (
                           <CircularProgress size={16} sx={{ ml: 1 }} />
@@ -440,12 +484,11 @@ const AddProduct = () => {
                                     style={{
                                       color: theme.palette.success.main,
                                       fontWeight: 700,
-                                      display: 'block'
+                                      display: "block",
                                     }}
                                     key={`PRICE_RESULT_${item.color}_${index}`}
                                   >
-                                    {item.color}:{" "}
-                                    {item?.price.toLocaleString()}{" "}
+                                    {item.color}: {item?.price.toLocaleString()}{" "}
                                     <small>ریال</small>
                                   </span>
                                 ))
@@ -460,7 +503,6 @@ const AddProduct = () => {
                               )}
                             </Typography>
                           </Box>
-                        
                         </>
                       )}
                     </Paper>

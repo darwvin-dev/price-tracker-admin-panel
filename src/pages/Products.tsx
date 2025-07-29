@@ -315,7 +315,7 @@ const Products = () => {
                         color: theme.palette.text.primary,
                       }}
                     >
-                      {p.name} {p.color}
+                      {p.name} {p.color} {p.is_core ? "⭐" : ""}
                     </Typography>
                   </TableCell>
                   <TableCell align="center" sx={{ fontWeight: 600 }}>

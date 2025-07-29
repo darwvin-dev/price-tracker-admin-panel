@@ -8,10 +8,14 @@ import Categories from '../pages/Categories';
 import CategoryDetail from '../pages/CategoryDetail';
 import SettingsPage from '../pages/Settings';
 import ExportPage from '../pages/Export';
+import ProductGroupManagement from '../pages/ProductGroupManagement';
+import ProductGroupDetail from '../pages/ProductGroupDetail';
 
 const AppRouter = () => (
   <Routes>
     <Route path="/products" element={<Products />} />
+    <Route path="/product-groups" element={<ProductGroupManagement />} />
+    <Route path="/product-groups/:id" element={<ProductGroupDetail />} />
     <Route path="/categories" element={<Categories />} />
     <Route path="/categories/:id" element={<CategoryDetail />} />
     <Route path="/add-product" element={<AddProduct />} />

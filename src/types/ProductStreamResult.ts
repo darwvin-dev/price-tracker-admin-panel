@@ -12,5 +12,6 @@ export interface ProductStreamResult {
 
 export interface StoreInfo {
   name: string;
-  module: string;
+  module?: string;
+  is_core?: boolean;
 }

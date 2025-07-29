@@ -12,6 +12,7 @@ import StoreLinksTable from "../components/productView/StoreLinksTable";
 import Spinner from "../components/Spinner";
 import type { Product } from "../types/product";
 import type { Price } from "../types/Price";
+import CorePriceComparison from "../components/productView/CorePriceComparison";
 
 export default function ProductView() {
   const { id } = useParams<{ id: string }>();
@@ -135,7 +136,7 @@ export default function ProductView() {
         setSnackbar={setSnackbar}
         productId={id}
       />
-
+      <CorePriceComparison priceHistory={product.price_history} />
       <ProductSnackbar snackbar={snackbar} setSnackbar={setSnackbar} />
     </Box>
   );

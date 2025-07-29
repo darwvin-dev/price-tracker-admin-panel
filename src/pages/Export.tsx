@@ -127,7 +127,7 @@ export default function ExportPage() {
           options={products}
           getOptionLabel={(option) => `${option.name} ${option.color}`}
           value={selectedProducts}
-          onChange={(event, newValue) => setSelectedProducts(newValue)}
+          onChange={(_, newValue) => setSelectedProducts(newValue)}
           isOptionEqualToValue={(option, value) => option.id === value.id}
           renderInput={(params) => <TextField {...params} placeholder="جستجو و انتخاب محصول..." />}
         />

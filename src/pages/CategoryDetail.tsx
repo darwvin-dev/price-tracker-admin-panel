@@ -7,16 +7,11 @@ import type { Category } from "../types/Category";
 
 const CategoryDetail = () => {
   const { id } = useParams();
-  const [category, setCategory] = useState<Category>(null);
-  const [products, setProducts] = useState([]);
+  const [category, setCategory] = useState<Category | null>(null);
 
   useEffect(() => {
     axios.get(`${import.meta.env.VITE_API_URL}api/categories/${id}/`).then((res) => {
       setCategory(res.data);
-    });
-
-    axios.get(`${import.meta.env.VITE_API_URL}api/products/?category=${id}`).then((res) => {
-      setProducts(res.data);
     });
   }, [id]);
 

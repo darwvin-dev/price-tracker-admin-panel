@@ -16,5 +16,6 @@ export type Product = {
   price_diff_percent: number;
   created_at: string;
   variations: Variations[];
+  is_core?: boolean;
 };
 
