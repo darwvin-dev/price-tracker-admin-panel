@@ -4,5 +4,6 @@ export type Price = {
   price: number;
   crawler_name: string;
   checked_at: string;
+  available: boolean;
   variation: string | null; 
 };

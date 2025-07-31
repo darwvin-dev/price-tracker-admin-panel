@@ -308,10 +308,6 @@ const Products = () => {
                       variant="body2"
                       fontWeight={600}
                       sx={{
-                        maxWidth: 300,
-                        whiteSpace: "nowrap",
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
                         color: theme.palette.text.primary,
                       }}
                     >

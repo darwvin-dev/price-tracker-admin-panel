@@ -51,10 +51,8 @@ export default function PriceChart({
       const zoomStep = Math.max(2, Math.floor(rangeSize * 0.1));
 
       if (delta > 0 && rangeSize > 10) {
-        // Zoom In
         setZoomRange(([start, end]) => [start + zoomStep, end - zoomStep]);
       } else if (delta < 0) {
-        // Zoom Out
         setZoomRange(([start, end]) => [
           Math.max(0, start - zoomStep),
           Math.min(chartData.length - 1, end + zoomStep),

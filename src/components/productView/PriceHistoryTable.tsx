@@ -119,8 +119,8 @@ const PriceHistoryTable = forwardRef<PriceHistoryTableRef, Props>(
     const columns: GridColDef[] = [
       { field: "store", headerName: "فروشگاه", width: 140, renderCell: (params) => `${params.row.store} ${params.row.store_info.is_core ? "⭐" : ""}`},
       {
-        field: "variation",
-        headerName: "رنگ",
+        field: "note",
+        headerName: "توضیح",
         width: 140,
         renderCell: (params) => <span>{params.value}</span>,
       },

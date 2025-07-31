@@ -17,5 +17,7 @@ export type Product = {
   created_at: string;
   variations: Variations[];
   is_core?: boolean;
+  auto_update_interval_minutes: number;
+  auto_update_enabled: boolean;
 };
 

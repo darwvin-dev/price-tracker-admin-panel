@@ -8,6 +8,7 @@ import {
   Box,
   Chip,
   TextField,
+  MenuItem,
 } from "@mui/material";
 import AutorenewIcon from "@mui/icons-material/Autorenew";
 import TrendingUpIcon from "@mui/icons-material/TrendingUp";
@@ -32,6 +33,12 @@ export default function ProductHeader({
     severity: "success" | "error" | "info" | "warning";
   }) => void;
 }) {
+  const intervalUnits = [
+    { label: "دقیقه", value: "minutes" },
+    { label: "ساعت", value: "hours" },
+    { label: "روز", value: "days" },
+  ];
+
   const allPrices = product?.price_history.map((p) => p.price);
   const maxPrice = allPrices.length ? Math.max(...allPrices) : 0;
   const minPrice = allPrices.length ? Math.min(...allPrices) : 0;
@@ -42,9 +49,57 @@ export default function ProductHeader({
     product.user_price_diff?.toString() || ""
   );
   const [saving, setSaving] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [autoUpdateEnabled, setAutoUpdateEnabled] = useState<boolean>(
+    product.auto_update_enabled || false
+  );
+  const [intervalValue, setIntervalValue] = useState<number>(
+    product.auto_update_interval_minutes || 0
+  );
+  const [intervalUnit, setIntervalUnit] = useState<
+    "minutes" | "hours" | "days"
+  >("hours");
 
   const handleImageClick = () => {
     fileInputRef.current?.click();
+  };
+
+  const computeIntervalMinutes = () => {
+    if (intervalUnit === "minutes") return intervalValue;
+    if (intervalUnit === "hours") return intervalValue * 60;
+    if (intervalUnit === "days") return intervalValue * 1440;
+    return 0;
+  };
+
+  const handleAutoUpdateSave = async () => {
+    setSaving(true);
+    try {
+      const formData = new FormData();
+      formData.append("auto_update_enabled", autoUpdateEnabled.toString());
+      formData.append(
+        "auto_update_interval_minutes",
+        computeIntervalMinutes().toString()
+      );
+
+      await axios.patch(
+        `${import.meta.env.VITE_API_URL}api/products/${product.id}/update/`,
+        formData
+      );
+
+      setSnackbar({
+        open: true,
+        message: "تنظیمات بروزرسانی خودکار ذخیره شد!",
+        severity: "success",
+      });
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    } catch (err) {
+      setSnackbar({
+        open: true,
+        message: "خطا در ذخیره تنظیمات بروزرسانی!",
+        severity: "error",
+      });
+    }
+    setSaving(false);
   };
 
   const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -151,6 +206,44 @@ export default function ProductHeader({
             variant="outlined"
             onClick={handlePriceDiffSave}
             disabled={saving}
+          >
+            ذخیره
+          </Button>
+        </Box>
+
+        <Box mt={2} display="flex" alignItems="center" gap={2}>
+          <TextField
+            label="فاصله زمانی"
+            type="number"
+            size="small"
+            value={intervalValue}
+            onChange={(e) => setIntervalValue(Number(e.target.value))}
+            inputProps={{ min: 1 }}
+            sx={{ width: 120 }}
+          />
+
+          <TextField
+            select
+            label="واحد زمانی"
+            size="small"
+            value={intervalUnit}
+            onChange={(e) =>
+              setIntervalUnit(e.target.value as "minutes" | "hours" | "days")
+            }
+            sx={{ width: 140 }}
+          >
+            {intervalUnits.map((unit) => (
+              <MenuItem key={unit.value} value={unit.value}>
+                {unit.label}
+              </MenuItem>
+            ))}
+          </TextField>
+
+          <Button
+            variant="contained"
+            size="small"
+            onClick={handleAutoUpdateSave}
+            disabled={saving || !intervalValue}
           >
             ذخیره
           </Button>

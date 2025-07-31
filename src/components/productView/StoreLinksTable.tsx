@@ -114,28 +114,27 @@ export default function StoreLinksTable({
         storeLink.id
       }/update-price/`,
       { method: "POST" }
-    )
-      .then(async (res) => {
-        if(res.status === 201){
-          setSnackbar({
-            open: true,
-            message: "قیمت بروزرسانی شد!",
-            severity: "success",
-          });
-        }else{
-          setSnackbar({
-            open: true,
-            message: "بروزرسانی انجام نشد!",
-            severity: "error",
-          });
-        }
-        const productRes = await fetch(
-          `${import.meta.env.VITE_API_URL}api/products/${product.id}/`
-        );
-        const data = await productRes.json();
-        setProduct(data);
-        getData();
-      })
+    ).then(async (res) => {
+      if (res.status === 201) {
+        setSnackbar({
+          open: true,
+          message: "قیمت بروزرسانی شد!",
+          severity: "success",
+        });
+      } else {
+        setSnackbar({
+          open: true,
+          message: "بروزرسانی انجام نشد!",
+          severity: "error",
+        });
+      }
+      const productRes = await fetch(
+        `${import.meta.env.VITE_API_URL}api/products/${product.id}/`
+      );
+      const data = await productRes.json();
+      setProduct(data);
+      getData();
+    });
   };
 
   if (!product.store_links.length)
@@ -198,7 +197,7 @@ export default function StoreLinksTable({
                 sx={{ borderBottom: "1px solid #eee" }}
               >
                 <Box component="td" sx={{ p: 1 }}>
-                  {storeLink.store}
+                  {storeLink.store} {storeLink.is_core ? "⭐" : ""}
                 </Box>
                 <Box component="td" sx={{ p: 1 }}>
                   {editableLinks[storeLink.id]?.editing ? (
@@ -263,7 +262,9 @@ export default function StoreLinksTable({
                 </Box>
                 <Box component="td" sx={{ p: 1 }}>
                   {lastStorePrice
-                    ? lastStorePrice.price.toLocaleString() + " ریال"
+                    ? lastStorePrice.available
+                      ? lastStorePrice.price.toLocaleString() + " ریال"
+                      : "ناموجود"
                     : "—"}
                 </Box>
                 <Box component="td" sx={{ p: 1 }}>
