@@ -3,4 +3,5 @@ export type StoreLink = {
   store: string;
   url: string;
   is_core: boolean;
+  is_frontend?: boolean;
 };

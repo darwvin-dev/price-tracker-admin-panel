@@ -9,6 +9,8 @@ import {
   Chip,
   TextField,
   MenuItem,
+  FormControlLabel,
+  Switch,
 } from "@mui/material";
 import AutorenewIcon from "@mui/icons-material/Autorenew";
 import TrendingUpIcon from "@mui/icons-material/TrendingUp";
@@ -33,12 +35,6 @@ export default function ProductHeader({
     severity: "success" | "error" | "info" | "warning";
   }) => void;
 }) {
-  const intervalUnits = [
-    { label: "دقیقه", value: "minutes" },
-    { label: "ساعت", value: "hours" },
-    { label: "روز", value: "days" },
-  ];
-
   const allPrices = product?.price_history.map((p) => p.price);
   const maxPrice = allPrices.length ? Math.max(...allPrices) : 0;
   const minPrice = allPrices.length ? Math.min(...allPrices) : 0;
@@ -48,17 +44,28 @@ export default function ProductHeader({
   const [priceDiff, setPriceDiff] = useState<string>(
     product.user_price_diff?.toString() || ""
   );
+
+  const totalMinutes = product.auto_update_interval_minutes || 0;
+
+  let defaultUnit: "minutes" | "hours" | "days" = "minutes";
+  let defaultValue = totalMinutes;
+
+  if (totalMinutes % 1440 === 0) {
+    defaultUnit = "days";
+    defaultValue = totalMinutes / 1440;
+  } else if (totalMinutes % 60 === 0) {
+    defaultUnit = "hours";
+    defaultValue = totalMinutes / 60;
+  }
+
+  const [intervalValue, setIntervalValue] = useState<number>(defaultValue);
+  const [intervalUnit, setIntervalUnit] =
+    useState<typeof defaultUnit>(defaultUnit);
+
   const [saving, setSaving] = useState(false);
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [autoUpdateEnabled, setAutoUpdateEnabled] = useState<boolean>(
     product.auto_update_enabled || false
   );
-  const [intervalValue, setIntervalValue] = useState<number>(
-    product.auto_update_interval_minutes || 0
-  );
-  const [intervalUnit, setIntervalUnit] = useState<
-    "minutes" | "hours" | "days"
-  >("hours");
 
   const handleImageClick = () => {
     fileInputRef.current?.click();
@@ -211,42 +218,51 @@ export default function ProductHeader({
           </Button>
         </Box>
 
-        <Box mt={2} display="flex" alignItems="center" gap={2}>
-          <TextField
-            label="فاصله زمانی"
-            type="number"
-            size="small"
-            value={intervalValue}
-            onChange={(e) => setIntervalValue(Number(e.target.value))}
-            inputProps={{ min: 1 }}
-            sx={{ width: 120 }}
+        <Box mt={2} display="flex" flexDirection="column" gap={2}>
+          <FormControlLabel
+            control={
+              <Switch
+                checked={autoUpdateEnabled}
+                onChange={(e) => setAutoUpdateEnabled(e.target.checked)}
+                color="primary"
+              />
+            }
+            label="آپدیت خودکار فعال باشد؟"
           />
 
-          <TextField
-            select
-            label="واحد زمانی"
-            size="small"
-            value={intervalUnit}
-            onChange={(e) =>
-              setIntervalUnit(e.target.value as "minutes" | "hours" | "days")
-            }
-            sx={{ width: 140 }}
-          >
-            {intervalUnits.map((unit) => (
-              <MenuItem key={unit.value} value={unit.value}>
-                {unit.label}
-              </MenuItem>
-            ))}
-          </TextField>
+          <Box display="flex" alignItems="center" gap={2}>
+            <TextField
+              type="number"
+              size="small"
+              label="عدد فاصله"
+              value={intervalValue}
+              onChange={(e) => setIntervalValue(parseInt(e.target.value))}
+              sx={{ width: 100 }}
+              disabled={!autoUpdateEnabled}
+            />
+            <TextField
+              select
+              size="small"
+              label="واحد"
+              value={intervalUnit}
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              onChange={(e) => setIntervalUnit(e.target.value as any)}
+              sx={{ width: 120 }}
+              disabled={!autoUpdateEnabled}
+            >
+              <MenuItem value="minutes">دقیقه</MenuItem>
+              <MenuItem value="hours">ساعت</MenuItem>
+              <MenuItem value="days">روز</MenuItem>
+            </TextField>
 
-          <Button
-            variant="contained"
-            size="small"
-            onClick={handleAutoUpdateSave}
-            disabled={saving || !intervalValue}
-          >
-            ذخیره
-          </Button>
+            <Button
+              variant="contained"
+              onClick={handleAutoUpdateSave}
+              disabled={saving}
+            >
+              ذخیره
+            </Button>
+          </Box>
         </Box>
 
         <Button

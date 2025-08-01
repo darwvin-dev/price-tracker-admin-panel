@@ -14,4 +14,5 @@ export interface StoreInfo {
   name: string;
   module?: string;
   is_core?: boolean;
+  is_frontend?: boolean;
 }
