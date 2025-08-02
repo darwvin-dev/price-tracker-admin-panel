@@ -1,4 +1,6 @@
-export async function get_product_link(productName: string): Promise<string | null> {
+export async function get_product_link(
+  productName: string
+): Promise<string | null> {
   try {
     const response = await fetch("/api/kalatik-proxy", {
       method: "POST",
@@ -24,14 +26,16 @@ export async function get_product_link(productName: string): Promise<string | nu
       const href = link.getAttribute("href") ?? "";
 
       const score = get_match_score(productName, title);
-      console.log(productName, title, score)
       if (score > bestScore) {
         bestScore = score;
         bestUrl = href;
       }
     }
+    if (bestUrl && bestUrl.startsWith("/")) {
+      bestUrl = `https://kalatik.com${bestUrl}`;
+    }
 
-    return bestUrl ? `https://kalatik.com${bestUrl}` : null;
+    return bestUrl;
   } catch (err) {
     console.error("❌ get_product_link error:", err);
     return null;
@@ -42,7 +46,9 @@ export async function get_price(
   productUrl: string
 ): Promise<Array<{ color: string; note: string; price: number }> | null> {
   try {
-    const response = await fetch(productUrl);
+    const proxyUrl = "https://corsproxy.io/?" + encodeURIComponent(productUrl);
+    const response = await fetch(proxyUrl);
+
     const html = await response.text();
     const parser = new DOMParser();
     const doc = parser.parseFromString(html, "text/html");

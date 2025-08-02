@@ -128,7 +128,7 @@ export default function CorePriceComparison({ priceHistory }: { priceHistory: Pr
             <TableRow key={`core-${index}`}>
               <TableCell>{price.store}</TableCell>
               <TableCell style={{ color: "#2e7d32", fontWeight: 700 }}>
-                {price.price.toLocaleString()} <small>ریال</small>
+                {price?.price?.toLocaleString()} <small>ریال</small>
               </TableCell>
               <TableCell>{formatDateTime(price.checked_at)}</TableCell>
               <TableCell>
@@ -161,7 +161,7 @@ export default function CorePriceComparison({ priceHistory }: { priceHistory: Pr
                 <TableRow key={`other-${index}`}>
                   <TableCell>{price.store}</TableCell>
                   <TableCell style={{ color: "#c62828", fontWeight: 700 }}>
-                    {price.price.toLocaleString()} <small>ریال</small>
+                    {price.price?.toLocaleString()} <small>ریال</small>
                   </TableCell>
                   <TableCell>{formatDateTime(price.checked_at)}</TableCell>
                   <TableCell>

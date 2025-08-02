@@ -79,6 +79,7 @@ const AddProduct = () => {
               try {
                 const mod = await import(`../crawlers/${store.module}.ts`);
                 const url = await mod.get_product_link(productName);
+                console.log(url)
                 const prices = url ? await mod.get_price(url) : null;
 
                 setResults((prev) => {
@@ -147,17 +148,27 @@ const AddProduct = () => {
 
     if (!newUrl || newUrl.length < 5 || !productName) return;
 
-    const formData = new FormData();
-    formData.append("store", storeName);
-    formData.append("url", newUrl);
+    const store = loadingStores.find((s) => s.name === storeName);
+    if (!store) return;
 
     try {
-      const response = await axios.post(
-        `${import.meta.env.VITE_API_URL}api/storelinks/check-price/`,
-        formData
-      );
+      let prices = null;
 
-      const prices = response.data;
+      if (store.is_frontend) {
+        const mod = await import(`../crawlers/${store.module}.ts`);
+        prices = await mod.get_price(newUrl);
+      } else {
+        const formData = new FormData();
+        formData.append("store", storeName);
+        formData.append("url", newUrl);
+
+        const response = await axios.post(
+          `${import.meta.env.VITE_API_URL}api/storelinks/check-price/`,
+          formData
+        );
+        prices = response.data;
+      }
+
       const updatedResult: ProductStreamResult = {
         type: "result",
         store: { name: storeName },

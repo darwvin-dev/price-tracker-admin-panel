@@ -130,7 +130,7 @@ const PriceHistoryTable = forwardRef<PriceHistoryTableRef, Props>(
         width: 200,
         renderCell: (params) => (
           <Typography fontWeight={500} color="primary">
-            {params.value.toLocaleString()} ریال
+            {params.value ? `${params.value?.toLocaleString()} ریال` : "ناموجود"}
           </Typography>
         ),
       },

@@ -35,7 +35,9 @@ export default function ProductHeader({
     severity: "success" | "error" | "info" | "warning";
   }) => void;
 }) {
-  const allPrices = product?.price_history.map((p) => p.price);
+  const allPrices = product?.price_history
+    .filter((p) => p.price)
+    .map((p) => p.price);
   const maxPrice = allPrices.length ? Math.max(...allPrices) : 0;
   const minPrice = allPrices.length ? Math.min(...allPrices) : 0;
   const lastPrice = allPrices.length ? allPrices[allPrices.length - 1] : null;

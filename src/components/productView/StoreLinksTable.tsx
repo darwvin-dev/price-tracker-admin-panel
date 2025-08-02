@@ -274,7 +274,7 @@ export default function StoreLinksTable({
                 <Box component="td" sx={{ p: 1 }}>
                   {lastStorePrice
                     ? lastStorePrice.available
-                      ? lastStorePrice.price.toLocaleString() + " ریال"
+                      ? lastStorePrice.price?.toLocaleString() + " ریال"
                       : "ناموجود"
                     : "—"}
                 </Box>
