@@ -134,8 +134,7 @@ const PriceHistoryTable = forwardRef<PriceHistoryTableRef, Props>(
           </Typography>
         ),
       },
-      { field: "checked_at", headerName: "تاریخ ثبت", width: 120 },
-      { field: "crawler_name", headerName: "کرالر", width: 120 },
+      { field: "checked_at", headerName: "تاریخ ثبت", width: 220 },
       {
         field: "actions",
         headerName: "عملیات",
@@ -199,6 +198,7 @@ const PriceHistoryTable = forwardRef<PriceHistoryTableRef, Props>(
               ...p,
               checked_at: new Intl.DateTimeFormat("fa-IR", {
                 dateStyle: "medium",
+                timeStyle: "medium"
               }).format(new Date(p.checked_at)),
             }))}
             columns={columns}

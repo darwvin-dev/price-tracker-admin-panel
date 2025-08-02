@@ -109,7 +109,7 @@ export default function StoreLinksTable({
 
     if (store.is_frontend) {
       try {
-        const mod = await import(`../../crawlers/${store.store}.ts`);
+        const mod = await import(`../../crawlers/products.crawlers.${store.store.toLowerCase()}.ts`);
         const prices = await mod.get_price(store.url);
 
         if (!prices?.length) throw new Error("قیمتی یافت نشد");
