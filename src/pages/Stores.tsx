@@ -14,6 +14,7 @@ import {
 } from "@mui/material";
 import { useEffect, useState } from "react";
 import axios from "axios";
+import { Link } from "react-router-dom";
 
 type Store = {
   id: number;
@@ -29,8 +30,8 @@ type Product = {
   id: number;
   name: string;
   price: number;
-  image: string;  // تصویر محصول
-  description: string;  // توضیحات محصول
+  image: string; 
+  color: string; 
 };
 
 const StoresPage = () => {
@@ -159,7 +160,7 @@ const StoresPage = () => {
             <TableBody>
               {selectedStore?.products.map((product) => (
                 <TableRow key={product.id}>
-                  <TableCell align="center">{product.name}</TableCell>
+                  <TableCell align="center"><Link to={"/products/" + product.id}>{product.name} - {product.color}</Link></TableCell>
                   <TableCell align="center">{product.price} تومان</TableCell>
                   <TableCell align="center">
                     {product.image && (
