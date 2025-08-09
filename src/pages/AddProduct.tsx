@@ -8,11 +8,15 @@ import {
   TextField,
   Typography,
   useTheme,
+  Paper,
   Fade,
   IconButton,
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import StorefrontIcon from "@mui/icons-material/Storefront";
+import LinkIcon from "@mui/icons-material/Link";
+import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline";
+import DoneAllIcon from "@mui/icons-material/DoneAll";
 import PhotoCamera from "@mui/icons-material/PhotoCamera";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { useEffect, useState, useRef } from "react";
@@ -26,7 +30,6 @@ import type {
 } from "../types/ProductStreamResult";
 import type { Category } from "../types/Category";
 import CategorySelector from "../components/CategorySelector";
-import StoreResultItem from "../components/addProduct/StoreResultItem";
 
 const Alert = MuiAlert as React.ElementType;
 
@@ -43,11 +46,11 @@ const AddProduct = () => {
   const [selectedCategories, setSelectedCategories] = useState<Category[]>([]);
   const [loadingStores, setLoadingStores] = useState<StoreInfo[]>([]);
   const [submitting, setSubmitting] = useState(false);
-  const [snackbar, setSnackbar] = useState({
-    open: false,
-    message: "",
-    severity: "error" as "success" | "info" | "warning" | "error",
-  });
+  const [snackbar, setSnackbar] = useState<{
+    open: boolean;
+    message: string;
+    severity: "success" | "info" | "warning" | "error";
+  }>({ open: false, message: "", severity: "error" });
 
   const [image, setImage] = useState<File | null>(null);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
@@ -55,81 +58,33 @@ const AddProduct = () => {
 
   useEffect(() => {
     if (!productName) return;
-
     const eventSource = new EventSource(
       `${
         import.meta.env.VITE_API_URL
       }stream/check/?product_name=${encodeURIComponent(productName)}`
     );
-
     setConnected(false);
     setResults([]);
-
     eventSource.onopen = () => setConnected(true);
-    eventSource.onmessage = async (event) => {
+    eventSource.onmessage = (event) => {
       try {
         const data: ProductStreamResult = JSON.parse(event.data);
-
-        if (data.type === "stores" && data.stores) {
-          const frontendStores = data.stores.filter((s) => s.is_frontend);
-          const backendStores = data.stores.filter((s) => !s.is_frontend);
-
-          await Promise.all(
-            frontendStores.map(async (store) => {
-              try {
-                const mod = await import(`../crawlers/${store.module}.ts`);
-                const url = await mod.get_product_link(productName);
-                console.log(url)
-                const prices = url ? await mod.get_price(url) : null;
-
-                setResults((prev) => {
-                  const others = prev.filter(
-                    (r) => r.type !== "result" || r.store?.name !== store.name
-                  );
-                  return [
-                    ...others,
-                    {
-                      type: "result",
-                      store: { name: store.name },
-                      url: url || "",
-                      prices,
-                    },
-                  ];
-                });
-              } catch (err) {
-                console.error(`[${store.name}] Crawler failed`, err);
-              }
-            })
-          );
-
-          setLoadingStores([...frontendStores, ...backendStores]);
-        }
-
-        if (data.type === "result") {
-          setResults((prev) => {
-            const others = prev.filter(
-              (r) => r.type !== "result" || r.store?.name !== data.store?.name
-            );
-            return [...others, data];
-          });
-        }
+        if (data.type === "stores" && data.stores)
+          setLoadingStores(data.stores);
+        console.log(data);
+        setResults((prev) => [...prev, data]);
       } catch (error) {
         console.warn("❌ JSON parse error", error);
       }
     };
-
     eventSource.onerror = () => {
       setConnected(false);
       eventSource.close();
     };
-
     return () => eventSource.close();
   }, [productName]);
 
   const dataResults = results.filter((res) => res.type === "result");
-
-  const getResultForStore = (store: StoreInfo) =>
-    dataResults.find((res) => res.store?.name === store.name);
 
   const handleCheck = () => {
     if (!input.trim()) {
@@ -143,31 +98,24 @@ const AddProduct = () => {
     setProductName(input);
   };
 
+  const getResultForStore = (store: StoreInfo) =>
+    dataResults.find((res) => res.store?.name === store.name);
+
   const handleUrlChange = async (storeName: string, newUrl: string) => {
     setUrlOverrides((prev) => ({ ...prev, [storeName]: newUrl }));
 
     if (!newUrl || newUrl.length < 5 || !productName) return;
-
-    const store = loadingStores.find((s) => s.name === storeName);
-    if (!store) return;
+    const formData = new FormData();
+    formData.append("store", storeName);
+    formData.append("url", newUrl);
 
     try {
-      let prices = null;
+      const response = await axios.post(
+        `${import.meta.env.VITE_API_URL}api/storelinks/check-price/`,
+        formData
+      );
 
-      if (store.is_frontend) {
-        const mod = await import(`../crawlers/${store.module}.ts`);
-        prices = await mod.get_price(newUrl);
-      } else {
-        const formData = new FormData();
-        formData.append("store", storeName);
-        formData.append("url", newUrl);
-
-        const response = await axios.post(
-          `${import.meta.env.VITE_API_URL}api/storelinks/check-price/`,
-          formData
-        );
-        prices = response.data;
-      }
+      const prices = response.data;
 
       const updatedResult: ProductStreamResult = {
         type: "result",
@@ -182,6 +130,7 @@ const AddProduct = () => {
         );
         return [...others, updatedResult];
       });
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       console.error("❌ قیمت‌گذاری شکست خورد:", err);
       const errorResult: ProductStreamResult = {
@@ -210,7 +159,7 @@ const AddProduct = () => {
     });
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files?.[0]) {
+    if (e.target.files && e.target.files[0]) {
       setImage(e.target.files[0]);
       setImageUrl(URL.createObjectURL(e.target.files[0]));
     }
@@ -233,6 +182,7 @@ const AddProduct = () => {
           loadingStores
             .map((store) => {
               const result = getResultForStore(store);
+              console.log(result);
               const url = urlOverrides[store.name] ?? result?.url ?? "";
               return url && result
                 ? {
@@ -246,26 +196,27 @@ const AddProduct = () => {
             .filter(Boolean)
         )
       );
-
-      if (image) formData.append("image", image);
+      if (image) {
+        formData.append("image", image);
+      }
       selectedCategories.forEach((cat) => {
         formData.append("categories[]", cat.id.toString());
       });
-
       await axios.post(
         `${import.meta.env.VITE_API_URL}api/products/`,
         formData,
-        { headers: { "Content-Type": "multipart/form-data" } }
+        {
+          headers: { "Content-Type": "multipart/form-data" },
+        }
       );
-
       setSnackbar({
         open: true,
         message: "✅ محصول با موفقیت ثبت شد.",
         severity: "success",
       });
       navigate(`/products`);
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (err) {
+      console.log(err);
       setSnackbar({
         open: true,
         message: "خطا در ثبت محصول. لطفاً دوباره تلاش کنید.",
@@ -293,6 +244,7 @@ const AddProduct = () => {
         }}
       >
         <CardContent sx={{ px: { xs: 1, md: 4 }, py: 3 }}>
+          {/* Header */}
           <Box
             display="flex"
             alignItems="center"
@@ -308,6 +260,7 @@ const AddProduct = () => {
           </Box>
           <Divider sx={{ mb: 3 }} />
 
+          {/* Product Name Input */}
           <Box
             display="flex"
             flexDirection={{ xs: "column", md: "row" }}
@@ -349,6 +302,7 @@ const AddProduct = () => {
             </Button>
           </Box>
 
+          {/* Image Upload */}
           <Box display="flex" alignItems="center" gap={2} mb={3}>
             <Button
               variant="outlined"
@@ -438,17 +392,131 @@ const AddProduct = () => {
               >
                 {loadingStores.map((store, index) => {
                   const result = getResultForStore(store);
+                  const overriddenUrl = urlOverrides[store.name] ?? result?.url;
+                  const loading = !result;
+                  const error = result?.error;
+                  const hasUrl = !!(result?.url || overriddenUrl);
+
                   return (
-                    <StoreResultItem
+                    <Paper
                       key={index}
-                      store={store}
-                      result={result}
-                      overriddenUrl={
-                        urlOverrides[store.name] ?? result?.url ?? ""
-                      }
-                      loading={!result}
-                      onUrlChange={handleUrlChange}
-                    />
+                      elevation={3}
+                      sx={{
+                        p: 2.5,
+                        border: "1.5px solid",
+                        borderColor: error
+                          ? theme.palette.error.main
+                          : hasUrl
+                          ? theme.palette.success.main
+                          : theme.palette.divider,
+                        backgroundColor: error
+                          ? `${theme.palette.error.main}11`
+                          : hasUrl
+                          ? `${theme.palette.success.main}07`
+                          : theme.palette.background.paper,
+                        borderRadius: 3,
+                        transition: "background 0.3s, border 0.3s",
+                        minHeight: 164,
+                        display: "flex",
+                        flexDirection: "column",
+                        justifyContent: "space-between",
+                        boxShadow:
+                          hasUrl && !error
+                            ? `0 2px 8px 0 ${theme.palette.success.main}22`
+                            : undefined,
+                      }}
+                    >
+                      <Box display="flex" alignItems="center" gap={1} mb={1}>
+                        <LinkIcon
+                          color={hasUrl && !error ? "success" : "disabled"}
+                        />
+                        <Typography fontWeight={700} color="primary.dark">
+                          فروشگاه: {store.name} {store.is_core ? "⭐" : ""}
+                        </Typography>
+                        {loading && (
+                          <CircularProgress size={16} sx={{ ml: 1 }} />
+                        )}
+                        {!loading && hasUrl && !error && (
+                          <DoneAllIcon
+                            color="success"
+                            fontSize="small"
+                            sx={{ ml: 1 }}
+                          />
+                        )}
+                        {!loading && error && (
+                          <ErrorOutlineIcon
+                            color="error"
+                            fontSize="small"
+                            sx={{ ml: 1 }}
+                          />
+                        )}
+                      </Box>
+                      {loading ? (
+                        <Typography fontSize="15px" color="text.secondary">
+                          در حال بررسی...
+                        </Typography>
+                      ) : (
+                        <>
+                          <TextField
+                            label="لینک محصول"
+                            fullWidth
+                            value={overriddenUrl ?? ""}
+                            onChange={(e) =>
+                              handleUrlChange(store.name, e.target.value)
+                            }
+                            sx={{
+                              mb: 1,
+                              "& input": { direction: "ltr" },
+                            }}
+                          />
+                          <Box
+                            display="flex"
+                            alignItems="center"
+                            gap={1}
+                            mb={1}
+                          >
+                            <Typography fontSize="15px">
+                              <strong>قیمت:</strong>{" "}
+                              {result?.prices?.length ? (
+                                result?.prices?.map((item, index) => (
+                                  <span
+                                    style={{
+                                      color: theme.palette.success.main,
+                                      fontWeight: 700,
+                                      display: "block",
+                                    }}
+                                    key={`PRICE_RESULT_${item.color}_${index}`}
+                                  >
+                                    {item.color}: {item?.price.toLocaleString()}{" "}
+                                    <small>ریال</small>
+                                  </span>
+                                ))
+                              ) : (
+                                <span
+                                  style={{
+                                    color: theme.palette.text.secondary,
+                                  }}
+                                >
+                                  —
+                                </span>
+                              )}
+                            </Typography>
+                          </Box>
+                          {error && (
+                            <Button
+                              variant="outlined"
+                              color="error"
+                              size="small"
+                              onClick={() =>
+                                handleUrlChange(store.name, overriddenUrl ?? "")
+                              }
+                            >
+                              تلاش دوباره
+                            </Button>
+                          )}
+                        </>
+                      )}
+                    </Paper>
                   );
                 })}
               </Box>

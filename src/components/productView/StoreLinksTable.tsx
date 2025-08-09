@@ -106,46 +106,11 @@ export default function StoreLinksTable({
   const handleUpdateStorePrice = async (storeLink: StoreLink) => {
     const store = product.store_links.find((s) => s.id === storeLink.id);
     if (!store) return;
-
-    if (store.is_frontend) {
-      try {
-        const mod = await import(`../../crawlers/products.crawlers.${store.store.toLowerCase()}.ts`);
-        const prices = await mod.get_price(store.url);
-
-        if (!prices?.length) throw new Error("قیمتی یافت نشد");
-
-        await fetch(`${import.meta.env.VITE_API_URL}api/prices/frontend/`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            product_id: product.id,
-            store: store.store,
-            prices,
-          }),
-        });
-
-        setSnackbar({
-          open: true,
-          message: "قیمت ذخیره شد!",
-          severity: "success",
-        });
-        getData();
-      } catch (err: any) {
-        console.error(err);
-        setSnackbar({
-          open: true,
-          message: "خطا در ذخیره قیمت",
-          severity: "error",
-        });
-      }
-    } else {
-      fetch(
-        `${import.meta.env.VITE_API_URL}api/storelinks/${
-          store.id
-        }/update-price/`,
-        { method: "POST" }
-      ).then(getData);
-    }
+    
+    fetch(
+      `${import.meta.env.VITE_API_URL}api/storelinks/${store.id}/update-price/`,
+      { method: "POST" }
+    ).then(getData);
   };
 
   if (!product.store_links.length)

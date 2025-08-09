@@ -4,28 +4,21 @@ import {
   Paper,
   Stack,
   Chip,
-  Link,
-  CircularProgress,
-  Tooltip,
   Avatar,
-  Button,
-  Grid,
   Skeleton,
   IconButton,
-  Divider,
   useMediaQuery,
-  useTheme,
+  useTheme
 } from "@mui/material";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { useEffect, useState } from "react";
-import ArrowBackIcon from "@mui/icons-material/ArrowBack";
-import OpenInNewIcon from "@mui/icons-material/OpenInNew";
-import PriceChangeIcon from "@mui/icons-material/PriceChange";
-import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
-import StoreIcon from "@mui/icons-material/Store";
-import StarBorderIcon from "@mui/icons-material/StarBorder";
-import StarIcon from "@mui/icons-material/Star";
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import LaunchIcon from '@mui/icons-material/Launch';
+import PriceChangeIcon from '@mui/icons-material/PriceChange';
+import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
+import StoreIcon from '@mui/icons-material/Store';
+import StarIcon from '@mui/icons-material/Star';
 
 type StoreLink = {
   id: number;
@@ -54,429 +47,297 @@ type ProductGroup = {
   products: Product[];
 };
 
-const formatPrice = (price: number) => {
-  const formatted = new Intl.NumberFormat("fa-IR").format(price);
-  return `${formatted} ریال`;
+const formatPrice = (price: number) => 
+  new Intl.NumberFormat('fa-IR').format(price) + " ریال";
+
+const PriceRangeBar = ({ diffPercent }: { diffPercent: number }) => {
+  const percentage = Math.min(100, Math.max(0, diffPercent));
+  return (
+    <Box position="relative" height={8} bgcolor="divider" borderRadius={4} overflow="hidden" mt={1}>
+      <Box 
+        position="absolute" 
+        height="100%" 
+        width={`${percentage}%`} 
+        bgcolor={diffPercent > 50 ? "error.main" : diffPercent > 20 ? "warning.main" : "success.main"}
+      />
+    </Box>
+  );
 };
 
-const formatDate = (dateString: string) => {
-  return new Date(dateString).toLocaleDateString("fa-IR", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
-};
+const LoadingSkeleton = () => (
+  <Box sx={{ maxWidth: 900, mx: "auto", p: 2 }}>
+    {[...Array(3)].map((_, index) => (
+      <Paper key={index} elevation={0} sx={{ p: 2, mb: 3, borderRadius: 3 }}>
+        <Box sx={{ 
+          display: 'flex', 
+          flexDirection: { xs: 'column', sm: 'row' }, 
+          alignItems: 'center',
+          gap: 2 
+        }}>
+          <Box>
+            <Skeleton variant="rectangular" width={100} height={100} sx={{ borderRadius: 2 }} />
+          </Box>
+          <Box sx={{ flexGrow: 1, width: { xs: '100%', sm: 'auto' } }}>
+            <Skeleton variant="text" width="60%" height={32} />
+            <Skeleton variant="text" width="40%" height={24} />
+            <Box display="flex" gap={1} mt={1}>
+              <Skeleton variant="rectangular" width={80} height={32} />
+              <Skeleton variant="rectangular" width={80} height={32} />
+            </Box>
+          </Box>
+          <Box sx={{ width: { xs: '100%', sm: 200 } }}>
+            <Skeleton variant="text" width="100%" height={24} />
+            <Skeleton variant="text" width="100%" height={24} />
+            <Skeleton variant="text" width="100%" height={24} />
+          </Box>
+        </Box>
+      </Paper>
+    ))}
+  </Box>
+);
 
 const ProductGroupDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [group, setGroup] = useState<ProductGroup | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
-  const isTablet = useMediaQuery(theme.breakpoints.between("sm", "md"));
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   useEffect(() => {
-    setLoading(true);
-    setError(false);
     axios
       .get(`${import.meta.env.VITE_API_URL}api/product-groups/${id}/`)
-      .then((res) => {
-        setGroup(res.data);
-      })
-      .catch(() => {
-        setError(true);
-      })
+      .then((res) => setGroup(res.data))
+      .catch(() => setGroup(null))
       .finally(() => setLoading(false));
   }, [id]);
 
-  const handleGoBack = () => {
-    navigate(-1);
-  };
+  if (loading) return <LoadingSkeleton />;
 
-  if (error) {
+  if (!group) {
     return (
-      <Box
-        display="flex"
-        flexDirection="column"
-        alignItems="center"
-        justifyContent="center"
-        minHeight="70vh"
-        p={2}
-        textAlign="center"
-      >
-        <Typography variant="h6" color="error" gutterBottom>
-          گروه مورد نظر یافت نشد
+      <Box textAlign="center" mt={8} p={3}>
+        <Typography variant="h5" color="text.secondary" mb={2}>
+          گروه محصول یافت نشد
         </Typography>
-        <Typography color="text.secondary" mb={3}>
-          ممکن است گروه حذف شده یا آدرس نادرست باشد
-        </Typography>
-        <Button
+        <Chip 
+          label="بازگشت به صفحه اصلی" 
+          onClick={() => navigate('/')} 
+          color="primary"
           variant="outlined"
-          startIcon={<ArrowBackIcon />}
-          onClick={handleGoBack}
-        >
-          بازگشت به لیست گروه‌ها
-        </Button>
+          clickable
+        />
       </Box>
     );
   }
 
-  const renderProductCard = (prod: Product) => (
-    <Paper
-      key={prod.id}
-      elevation={2}
-      sx={{
-        p: 2,
-        borderRadius: 3,
-        height: "100%",
-        display: "flex",
-        flexDirection: "column",
-        transition: "all 0.2s ease",
-        "&:hover": {
-          boxShadow: 4,
-          transform: "translateY(-4px)",
-          borderLeft: `4px solid ${theme.palette.primary.main}`,
-        },
-      }}
-    >
-      <Grid container spacing={2}>
-        {/* Product Image */}
-        <Grid item xs={12} sm="auto">
-          <Box
-            display="flex"
-            justifyContent="center"
-            sx={{ position: "relative" }}
-          >
-            <Avatar
-              variant="rounded"
-              src={prod.image || undefined}
-              alt={prod.name}
-              sx={{
-                width: 100,
-                height: 100,
-                bgcolor: prod.image ? "transparent" : "grey.100",
-                fontSize: 24,
-                border: "1px solid rgba(0,0,0,0.1)",
-              }}
-            >
-              {!prod.image && prod.name.charAt(0)}
-            </Avatar>
-            {prod.is_core && (
-              <Tooltip title="محصول فروشگاه Core" arrow placement="top">
-                <Box
-                  sx={{
-                    position: "absolute",
-                    top: -8,
-                    right: -8,
-                    bgcolor: "gold",
-                    borderRadius: "50%",
-                    width: 32,
-                    height: 32,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    boxShadow: 2,
-                  }}
-                >
-                  <StarIcon
-                    sx={{ color: "black", fontSize: 16, stroke: "black" }}
-                  />
-                </Box>
-              </Tooltip>
-            )}
-          </Box>
-        </Grid>
-
-        {/* Product Info */}
-        <Grid item xs={12} sm>
-          <Box>
-            <Typography
-              variant="h6"
-              fontWeight={700}
-              gutterBottom
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                gap: 1,
-                flexWrap: "wrap",
-              }}
-            >
-              {prod.name}
-              <Chip
-                label={prod.color}
-                size="small"
-                sx={{
-                  fontWeight: "bold",
-                  fontSize: 12,
-                  px: 0.5,
-                  height: 22,
-                }}
-                color="primary"
-                variant="outlined"
-              />
-            </Typography>
-
-            <Stack
-              direction="row"
-              alignItems="center"
-              spacing={1}
-              color="text.secondary"
-              mb={1}
-            >
-              <CalendarTodayIcon fontSize="small" />
-              <Typography variant="caption">
-                ایجاد شده: {formatDate(prod.created_at)}
-              </Typography>
-            </Stack>
-          </Box>
-
-          <Divider sx={{ my: 1.5 }} />
-
-          {/* Price Info */}
-          <Box mb={2}>
-            <Stack
-              direction="row"
-              alignItems="center"
-              spacing={1}
-              color="primary.main"
-              mb={1}
-            >
-              <PriceChangeIcon fontSize="small" />
-              <Typography variant="subtitle2" fontWeight={600}>
-                اطلاعات قیمت
-              </Typography>
-            </Stack>
-
-            <Grid container spacing={1}>
-              <Grid item xs={6} md={3}>
-                <Box bgcolor="rgba(33, 150, 243, 0.08)" p={1} borderRadius={1}>
-                  <Typography variant="caption" color="text.secondary">
-                    کمترین
-                  </Typography>
-                  <Typography fontWeight={600} fontSize={14}>
-                    {formatPrice(prod.min_price)}
-                  </Typography>
-                </Box>
-              </Grid>
-              <Grid item xs={6} md={3}>
-                <Box bgcolor="rgba(33, 150, 243, 0.08)" p={1} borderRadius={1}>
-                  <Typography variant="caption" color="text.secondary">
-                    بیشترین
-                  </Typography>
-                  <Typography fontWeight={600} fontSize={14}>
-                    {formatPrice(prod.max_price)}
-                  </Typography>
-                </Box>
-              </Grid>
-              <Grid item xs={12} md={6}>
-                <Box
-                  bgcolor={
-                    prod.price_diff_percent > 20
-                      ? "rgba(244, 67, 54, 0.1)"
-                      : "rgba(255, 152, 0, 0.1)"
-                  }
-                  p={1}
-                  borderRadius={1}
-                >
-                  <Typography variant="caption" color="text.secondary">
-                    اختلاف قیمت
-                  </Typography>
-                  <Typography
-                    fontWeight={600}
-                    fontSize={14}
-                    color={
-                      prod.price_diff_percent > 20 ? "error.main" : "warning.main"
-                    }
-                  >
-                    {formatPrice(prod.price_diff)} ({prod.price_diff_percent.toFixed(1)}٪)
-                  </Typography>
-                </Box>
-              </Grid>
-            </Grid>
-          </Box>
-
-          {/* Store Links */}
-          <Box>
-            <Stack
-              direction="row"
-              alignItems="center"
-              spacing={1}
-              color="primary.main"
-              mb={1}
-            >
-              <StoreIcon fontSize="small" />
-              <Typography variant="subtitle2" fontWeight={600}>
-                لینک‌های فروشگاه
-              </Typography>
-            </Stack>
-
-            <Stack
-              direction="row"
-              flexWrap="wrap"
-              gap={1}
-              sx={{ maxHeight: 100, overflowY: "auto" }}
-            >
-              {prod.store_links.map((link) => (
-                <Chip
-                  key={link.id}
-                  icon={<OpenInNewIcon fontSize="small" />}
-                  label={link.store}
-                  component="a"
-                  href={link.url}
-                  target="_blank"
-                  rel="noopener"
-                  clickable
-                  size="small"
-                  variant="outlined"
-                  sx={{
-                    px: 1,
-                    "& .MuiChip-label": { fontWeight: 500 },
-                  }}
-                />
-              ))}
-            </Stack>
-          </Box>
-        </Grid>
-
-        {/* Action Button */}
-        <Grid item xs={12}>
-          <Box display="flex" justifyContent="flex-end">
-            <Button
-              variant="outlined"
-              size="small"
-              endIcon={<OpenInNewIcon />}
-              onClick={() => navigate(`/products/${prod.id}`)}
-              sx={{ mt: 1 }}
-            >
-              مشاهده جزئیات محصول
-            </Button>
-          </Box>
-        </Grid>
-      </Grid>
-    </Paper>
-  );
-
-  const renderSkeleton = () => (
-    <Grid container spacing={3}>
-      {[1, 2, 3].map((item) => (
-        <Grid item xs={12} sm={6} md={4} key={item}>
-          <Skeleton
-            variant="rectangular"
-            height={isMobile ? 320 : 380}
-            sx={{ borderRadius: 3 }}
-          />
-        </Grid>
-      ))}
-    </Grid>
-  );
-
   return (
-    <Box
-      sx={{
-        p: { xs: 1, sm: 3 },
-        maxWidth: 1400,
-        mx: "auto",
-        minHeight: "100vh",
-      }}
-      dir="rtl"
-    >
-      <Button
-        startIcon={<ArrowBackIcon />}
-        onClick={handleGoBack}
-        sx={{ mb: 2, alignSelf: "flex-start" }}
-        size={isMobile ? "small" : "medium"}
-      >
-        بازگشت
-      </Button>
+    <Box sx={{ maxWidth: 1200, mx: "auto", p: { xs: 1, sm: 3 } }}>
+      <Stack direction="row" alignItems="center" mb={3} spacing={2}>
+        <IconButton onClick={() => navigate(-1)} color="primary" sx={{ p: 1, transform: 'rotate(180deg)' }}>
+          <ArrowBackIcon />
+        </IconButton>
+        <Typography variant="h4" fontWeight={700} color="primary">
+          {group.name}
+        </Typography>
+        <Chip 
+          label={`${group.products.length} محصول`} 
+          color="info" 
+          variant="outlined"
+          size={isMobile ? "small" : "medium"}
+        />
+      </Stack>
 
-      {loading ? (
-        <>
-          <Skeleton variant="text" width={300} height={60} sx={{ mx: "auto" }} />
-          <Skeleton variant="text" width={200} height={40} sx={{ mx: "auto" }} />
-          {renderSkeleton()}
-        </>
-      ) : group ? (
-        <>
-          <Box
-            sx={{
-              textAlign: "center",
-              mb: 4,
-              px: { xs: 1, md: 0 },
-            }}
-          >
-            <Typography
-              variant="h4"
-              fontWeight={700}
-              gutterBottom
+      {group.products.length === 0 ? (
+        <Box textAlign="center" p={8} bgcolor="background.paper" borderRadius={3}>
+          <StoreIcon sx={{ fontSize: 64, color: "text.disabled", mb: 2 }} />
+          <Typography variant="h6" color="text.secondary">
+            هنوز محصولی به این گروه اضافه نشده است
+          </Typography>
+          <Chip 
+            label="مشاهده سایر گروه‌ها" 
+            onClick={() => navigate('/')} 
+            color="primary"
+            sx={{ mt: 3 }}
+            clickable
+          />
+        </Box>
+      ) : (
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+          {group.products.map((prod) => (
+            <Paper
+              key={prod.id}
+              elevation={2}
               sx={{
-                background: `linear-gradient(45deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
-                WebkitBackgroundClip: "text",
-                WebkitTextFillColor: "transparent",
-                display: "inline-block",
+                p: 2,
+                borderRadius: 3,
+                transition: 'transform 0.2s, box-shadow 0.2s',
+                '&:hover': { 
+                  transform: 'translateY(-4px)',
+                  boxShadow: theme.shadows[6]
+                },
+                borderRight: `4px solid ${theme.palette.primary.main}`
               }}
             >
-              {group.name}
-            </Typography>
-            <Stack
-              direction="row"
-              justifyContent="center"
-              alignItems="center"
-              spacing={1}
-              color="text.secondary"
-            >
-              <CalendarTodayIcon fontSize="small" />
-              <Typography variant="body2">
-                ایجاد شده: {formatDate(group.created_at)}
-              </Typography>
-              <Chip
-                label={`${group.products.length} محصول`}
-                size="small"
-                color="primary"
-                variant="outlined"
-              />
-            </Stack>
-          </Box>
+              <Box sx={{ 
+                display: 'flex', 
+                flexDirection: { xs: 'column', sm: 'row' }, 
+                gap: 2,
+                alignItems: { sm: 'center' }
+              }}>
+                {/* Product Image */}
+                <Box sx={{ 
+                  position: 'relative',
+                  flexShrink: 0,
+                  alignSelf: { xs: 'center', sm: 'flex-start' }
+                }}>
+                  <Box 
+                    position="relative"
+                    sx={{ cursor: 'pointer' }}
+                    onClick={() => navigate(`/products/${prod.id}`)}
+                  >
+                    <Avatar
+                      variant="rounded"
+                      src={prod.image || undefined}
+                      alt={prod.name}
+                      sx={{
+                        width: 100,
+                        height: 100,
+                        bgcolor: prod.image ? 'transparent' : 'grey.100',
+                        border: '1px solid',
+                        borderColor: 'divider',
+                        fontSize: 24,
+                      }}
+                    >
+                      {!prod.image && prod.name.charAt(0)}
+                    </Avatar>
+                    {prod.is_core && (
+                      <Box 
+                        position="absolute" 
+                        top={-8} 
+                        left={-8} 
+                        bgcolor="gold" 
+                        borderRadius="50%" 
+                        p={0.5}
+                        boxShadow={2}
+                      >
+                        <StarIcon fontSize="small" sx={{ color: 'white' }} />
+                      </Box>
+                    )}
+                  </Box>
+                </Box>
 
-          {group.products.length === 0 ? (
-            <Box
-              display="flex"
-              flexDirection="column"
-              alignItems="center"
-              justifyContent="center"
-              minHeight="50vh"
-              textAlign="center"
-              p={3}
-            >
-              <StarBorderIcon
-                sx={{
-                  fontSize: 80,
-                  color: "grey.400",
-                  mb: 2,
-                }}
-              />
-              <Typography variant="h6" gutterBottom color="text.secondary">
-                این گروه هنوز محصولی ندارد
-              </Typography>
-              <Typography variant="body2" color="text.secondary" mb={3}>
-                می‌توانید از بخش مدیریت گروه‌ها محصولات را به این گروه اضافه کنید
-              </Typography>
-              <Button
-                variant="outlined"
-                startIcon={<ArrowBackIcon />}
-                onClick={handleGoBack}
-              >
-                بازگشت به مدیریت گروه‌ها
-              </Button>
-            </Box>
-          ) : (
-            <Grid container spacing={3}>
-              {group.products.map(renderProductCard)}
-            </Grid>
-          )}
-        </>
-      ) : null}
+                {/* Product Info */}
+                <Box sx={{ 
+                  flexGrow: 1, 
+                  minWidth: 0,
+                  width: { xs: '100%', sm: 'auto' } 
+                }}>
+                  <Stack direction="row" alignItems="center" spacing={1} flexWrap="wrap">
+                    <Typography 
+                      variant="h6" 
+                      fontWeight={600} 
+                      onClick={() => navigate(`/products/${prod.id}`)}
+                      sx={{ cursor: 'pointer', '&:hover': { color: 'primary.main' } }}
+                    >
+                      {prod.name}
+                    </Typography>
+                    <Chip
+                      label={prod.color}
+                      size="small"
+                      sx={{ fontWeight: 600, fontSize: 12 }}
+                      color="primary"
+                    />
+                  </Stack>
+                  
+                  <Stack direction="row" spacing={1} mt={1} alignItems="center">
+                    <CalendarTodayIcon fontSize="small" color="action" />
+                    <Typography variant="body2" color="text.secondary">
+                      {new Date(prod.created_at).toLocaleDateString('fa-IR')}
+                    </Typography>
+                  </Stack>
+                  
+                  {/* Store Links */}
+                  <Box mt={2} sx={{ 
+                    display: 'flex', 
+                    flexWrap: 'wrap',
+                    gap: 1,
+                    '& .MuiChip-root': { 
+                      ml: 0,
+                      mr: 1,
+                      mb: 1 
+                    }
+                  }}>
+                    {prod.store_links.map((link) => (
+                      <Chip
+                        key={link.id}
+                        icon={<LaunchIcon fontSize="small" />}
+                        label={link.store}
+                        component="a"
+                        href={link.url}
+                        target="_blank"
+                        rel="noopener"
+                        clickable
+                        size="small"
+                        color="secondary"
+                        variant="outlined"
+                      />
+                    ))}
+                  </Box>
+                </Box>
+
+                {/* Pricing Info */}
+                <Box sx={{ 
+                  flexShrink: 0, 
+                  width: { xs: '100%', sm: 250 },
+                  alignSelf: { xs: 'stretch', sm: 'auto' }
+                }}>
+                  <Box bgcolor="grey.50" borderRadius={2} p={2} height="100%">
+                    <Stack spacing={1}>
+                      <Stack direction="row" justifyContent="space-between">
+                        <Typography variant="body2" color="text.secondary">
+                          کمترین قیمت:
+                        </Typography>
+                        <Typography fontWeight={600} color="success.main">
+                          {formatPrice(prod.min_price)}
+                        </Typography>
+                      </Stack>
+                      
+                      <Stack direction="row" justifyContent="space-between">
+                        <Typography variant="body2" color="text.secondary">
+                          بیشترین قیمت:
+                        </Typography>
+                        <Typography fontWeight={600} color="error.main">
+                          {formatPrice(prod.max_price)}
+                        </Typography>
+                      </Stack>
+                      
+                      <Stack direction="row" justifyContent="space-between" alignItems="center">
+                        <Stack direction="row" alignItems="center" spacing={0.5}>
+                          <PriceChangeIcon fontSize="small" color="action" />
+                          <Typography variant="body2" color="text.secondary">
+                            اختلاف:
+                          </Typography>
+                        </Stack>
+                        <Chip
+                          label={`${formatPrice(prod.price_diff)} (${prod.price_diff_percent.toFixed(1)}٪)`}
+                          size="small"
+                          sx={{ fontWeight: 700 }}
+                          color={prod.price_diff_percent > 50 ? "error" : prod.price_diff_percent > 20 ? "warning" : "success"}
+                        />
+                      </Stack>
+                      
+                      <PriceRangeBar 
+                        diffPercent={prod.price_diff_percent} 
+                      />
+                    </Stack>
+                  </Box>
+                </Box>
+              </Box>
+            </Paper>
+          ))}
+        </Box>
+      )}
     </Box>
   );
 };
